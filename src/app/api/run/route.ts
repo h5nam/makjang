@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
       passcode,
       members,
       style,
+      genre,
       excludedTopics,
       autoApprove,
       quality,
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
       passcode: string;
       members?: MemberConfig[];
       style?: "live" | "webtoon";
+      genre?: "modern" | "rofan";
       excludedTopics?: string[];
       autoApprove?: boolean;
       quality?: "draft" | "final";
@@ -55,6 +57,9 @@ export async function POST(req: NextRequest) {
     if (style === "live" || style === "webtoon") {
       run.style = style;
     }
+    if (genre === "modern" || genre === "rofan") {
+      run.genre = genre;
+    }
     if (Array.isArray(excludedTopics)) {
       run.excludedTopics = excludedTopics;
     }
@@ -72,6 +77,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       runId: run.id,
       status: "writers_room",
+      genre: run.genre || "modern",
     });
   } catch (err: any) {
     console.error("Run API error:", err);

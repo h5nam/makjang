@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { ShowrunnerJSON } from "./types";
-import { NARRATOR_VOICE_PROMPT, LYRIA_STING_PROMPT } from "./prompts";
+import { GenreMode, ShowrunnerJSON } from "./types";
+import { NARRATOR_VOICE_PROMPT, LYRIA_STING_PROMPT, ROFAN_LYRIA_STING_PROMPT } from "./prompts";
 import { getStore } from "./store";
 
 let aiClient: GoogleGenAI | null = null;
@@ -252,6 +252,17 @@ Respond ONLY in JSON:
   };
 }
 
+function sanitizeOmniPrompt(prompt: string): string {
+  return prompt
+    .replace(/\b(swords?|blades?|daggers?|weapons?|hilts?|knives|knife)\b/gi, "imperial scepter")
+    .replace(/\b(duels?|fights?|fighting|attacks?|attacking|slaps?|slapping|strikes?|striking|stabs?|stabbing|kills?|killing|murders?)\b/gi, "confronts dramatically")
+    .replace(/\b(blood|bloody|bleeding|poison|poisoned|venom)\b/gi, "crimson tea")
+    .replace(/\b(bones?|corpses?|skulls?|skeletons?)\b/gi, "banquet dish")
+    .replace(/\b(trysts?|affairs?|adultery)\b/gi, "secret meeting")
+    .replace(/\b(splashes?|splashing|hurls?|hurling|throws?\s+wine)\b/gi, "sets down the goblet")
+    .replace(/밀회/g, "비밀 회동");
+}
+
 export async function generateOmniShotVideo(options: {
   keyframeBuffer: Buffer;
   prompt: string;
@@ -265,37 +276,92 @@ export async function generateOmniShotVideo(options: {
     Math.max(6, Math.round(options.durationSec || (options.quality === "final" ? 8 : 6)))
   );
   const duration = options.quality === "final" ? "8s" : `${clampedSec}s`;
+  const cleanPrompt = sanitizeOmniPrompt(options.prompt);
 
-  const interaction = await (ai.interactions as any).create({
-    model: "gemini-omni-1.1-flash",
-    input: [
-      {
-        type: "image",
-        mime_type: "image/jpeg",
-        data: options.keyframeBuffer.toString("base64"),
+  try {
+    const interaction = await (ai.interactions as any).create({
+      model: "gemini-omni-1.1-flash",
+      input: [
+        {
+          type: "image",
+          mime_type: "image/jpeg",
+          data: options.keyframeBuffer.toString("base64"),
+        },
+        {
+          type: "text",
+          text: cleanPrompt,
+        },
+      ],
+      response_format: {
+        type: "video",
+        resolution,
+        duration, // MUST be string e.g. "6s", "7s", "8s"
+        aspect_ratio: "16:9",
       },
-      {
-        type: "text",
-        text: options.prompt,
-      },
-    ],
-    response_format: {
-      type: "video",
-      resolution,
-      duration, // MUST be string e.g. "6s", "7s", "8s"
-      aspect_ratio: "16:9",
-    },
-  });
+    });
 
-  const b64 = interaction.output_video?.data;
-  if (!b64) {
-    throw new Error("gemini-omni-1.1-flash returned no video data");
+    const b64 = interaction.output_video?.data;
+    if (!b64) {
+      throw new Error("gemini-omni-1.1-flash returned no video data");
+    }
+    return Buffer.from(b64, "base64");
+  } catch (err) {
+    console.warn("generateOmniShotVideo primary attempt failed, retrying with safe prompt:", err);
+    // Extract quoted dialogue line if present
+    const quoteMatch = cleanPrompt.match(/["“]([^"”]+)["”]/);
+    const safeDialogue = quoteMatch ? quoteMatch[1] : "";
+    const safePrompt = [
+      "No on-screen text, no captions, no subtitles, no letters anywhere in the frame.",
+      "Continuous single shot, no scene cuts.",
+      "Cinematic Korean drama scene, warm lighting, shallow depth of field.",
+      "Slow dramatic camera push-in on the character in image 1.",
+      safeDialogue
+        ? `The character in image 1 speaks clearly with expressive lip-sync: "${safeDialogue}"`
+        : "The character in image 1 reacts with a dramatic, expressive gaze.",
+      "The line starts within the first second and is fully finished before the clip ends.",
+      "End on this shot.",
+      "No on-screen text, no captions, no subtitles, no letters anywhere in the frame.",
+    ].join(" ");
+
+    const retryInteraction = await (ai.interactions as any).create({
+      model: "gemini-omni-1.1-flash",
+      input: [
+        {
+          type: "image",
+          mime_type: "image/jpeg",
+          data: options.keyframeBuffer.toString("base64"),
+        },
+        {
+          type: "text",
+          text: safePrompt,
+        },
+      ],
+      response_format: {
+        type: "video",
+        resolution,
+        duration,
+        aspect_ratio: "16:9",
+      },
+    });
+
+    const retryB64 = retryInteraction.output_video?.data;
+    if (!retryB64) {
+      throw new Error("gemini-omni-1.1-flash safe retry returned no video data");
+    }
+    return Buffer.from(retryB64, "base64");
   }
-  return Buffer.from(b64, "base64");
 }
 
-export async function transcribeVideoDialogue(videoBuffer: Buffer): Promise<string> {
+export async function transcribeVideoDialogue(
+  videoBuffer: Buffer,
+  lang: "ko" | "en" = "ko"
+): Promise<string> {
   const ai = getAI();
+  const promptText =
+    lang === "en"
+      ? "Transcribe ONLY the spoken English dialogue in this video clip as plain text. Do not include quotation marks, speaker labels, or sound effect descriptions—output only the exact English words spoken."
+      : "이 영상에서 발화되는 한국어 대사만 정확히 받아쓰시오. 숫자는 아라비아 숫자 대신 한글 발음(예: 사십오만, 삼백이호)으로 적고, 다른 설명이나 따옴표 없이 들리는 한국어 문장만 출력하시오.";
+
   const interaction = await (ai.interactions as any).create({
     model: "gemini-3.8-flash",
     input: [
@@ -306,7 +372,7 @@ export async function transcribeVideoDialogue(videoBuffer: Buffer): Promise<stri
       },
       {
         type: "text",
-        text: "이 영상에서 발화되는 한국어 대사만 정확히 받아쓰시오. 숫자는 아라비아 숫자 대신 한글 발음(예: 사십오만, 삼백이호)으로 적고, 다른 설명이나 따옴표 없이 들리는 한국어 문장만 출력하시오.",
+        text: promptText,
       },
     ],
     generation_config: { thinking_level: "low" },
@@ -369,11 +435,16 @@ export async function synthesizeNarratorTTS(text: string): Promise<Buffer> {
 }
 
 export async function synthesizeCharacterDubTTS(
-  lineKo: string,
-  genderHint: "female" | "male" = "female"
+  lineText: string,
+  genderHint: "female" | "male" = "female",
+  lang: "ko" | "en" = "ko"
 ): Promise<Buffer> {
   const ai = getAI();
   const prebuiltVoice = genderHint === "male" ? "Puck" : "Kore";
+  const direction =
+    lang === "en"
+      ? `[In an intense, emotional dramatic television trailer acting tone] ${lineText}`
+      : `[격정적인 한국 막장드라마 연기 톤으로 또렷하게] ${lineText}`;
   const interaction = await (ai.interactions as any).create({
     model: "gemini-3.8-flash-tts",
     input: [
@@ -382,7 +453,7 @@ export async function synthesizeCharacterDubTTS(
         content: [
           {
             type: "text",
-            text: `[격정적인 한국 막장드라마 연기 톤으로 또렷하게] ${lineKo}`,
+            text: direction,
           },
         ],
       },
@@ -400,11 +471,12 @@ export async function synthesizeCharacterDubTTS(
   return Buffer.from(b64, "base64");
 }
 
-export async function generateLyriaSting(): Promise<Buffer> {
+export async function generateLyriaSting(genre?: GenreMode): Promise<Buffer> {
   const ai = getAI();
+  const prompt = genre === "rofan" ? ROFAN_LYRIA_STING_PROMPT : LYRIA_STING_PROMPT;
   const interaction = await (ai.interactions as any).create({
     model: "lyria-3-clip-preview",
-    input: LYRIA_STING_PROMPT,
+    input: prompt,
   });
   const b64 = interaction.output_audio?.data;
   if (!b64) {

@@ -23,6 +23,7 @@ interface CastConsentProps {
   onStarted: (config: {
     members: MemberConfig[];
     style: "live" | "webtoon";
+    genre: "modern" | "rofan";
     excludedTopics: string[];
     autoApprove: boolean;
   }) => void;
@@ -42,6 +43,9 @@ export function CastConsent({
   onStarted,
 }: CastConsentProps) {
   const [members, setMembers] = useState<MemberConfig[]>(session.members);
+  const [genre, setGenre] = useState<"modern" | "rofan">(
+    session.genre || "modern"
+  );
   const [style, setStyle] = useState<"live" | "webtoon">("live");
   const [excludedTopics, setExcludedTopics] = useState<string[]>([]);
   const [passcode, setPasscode] = useState<string>(
@@ -131,13 +135,15 @@ export function CastConsent({
           passcode,
           members,
           style,
+          genre,
           excludedTopics,
           autoApprove,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "제작 시작 실패");
-      onStarted({ members, style, excludedTopics, autoApprove });
+      session.genre = genre;
+      onStarted({ members, style, genre, excludedTopics, autoApprove });
     } catch (err: any) {
       setError(err?.message || "오류가 발생했습니다.");
     } finally {
@@ -311,6 +317,54 @@ export function CastConsent({
         {/* Right: Production Options & Launch */}
         <div className="lg:col-span-4 space-y-5">
           <div className="p-5 rounded-sm bg-[#141417] border border-white/10 space-y-5">
+            {/* Genre Toggle: 현대 막장 | 로판 막장 */}
+            <div className="space-y-2">
+              <label className="block text-xs font-mono-code uppercase tracking-wider text-[#D4B26A]">
+                장르 선택 (Genre Mode)
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setGenre("modern")}
+                  className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
+                    genre === "modern"
+                      ? "bg-[#C8102E]/20 border-[#C8102E] text-[#F5F2EB]"
+                      : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
+                  }`}
+                >
+                  <div className="text-xs font-bold">현대 막장</div>
+                  <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
+                    펜트하우스 · 부부의 세계 톤
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGenre("rofan")}
+                  className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
+                    genre === "rofan"
+                      ? "bg-[#580C1F]/60 border-[#D4B26A] text-[#F5E6C8]"
+                      : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
+                  }`}
+                >
+                  <div className="text-xs font-bold flex items-center gap-1">
+                    <span>로판 막장</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded-xs bg-[#D4B26A] text-[#0B0B0C] font-mono-code font-extrabold">
+                      황실
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
+                    칼레도르 제국 · 북부 대공 · 파혼
+                  </div>
+                </button>
+              </div>
+              {genre === "rofan" && (
+                <p className="text-[11px] text-[#D4B26A]/90 leading-snug pt-0.5">
+                  단톡방 영수증은 그대로 인용하고, 인물·배경·대사만 황실 로맨스 판타지 세계관으로 번안합니다.
+                </p>
+              )}
+            </div>
+
             {/* Visual Style */}
             <div className="space-y-2">
               <label className="block text-xs font-mono-code uppercase tracking-wider text-[#D4B26A]">
@@ -326,9 +380,13 @@ export function CastConsent({
                       : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
                   }`}
                 >
-                  <div className="text-xs font-bold">실사 K-드라마</div>
+                  <div className="text-xs font-bold">
+                    {genre === "rofan" ? "황실 실사 시대극" : "실사 K-드라마"}
+                  </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
-                    35mm 아나모픽 · 펜트하우스 톤
+                    {genre === "rofan"
+                      ? "브리저튼 · 재혼황후 실사 톤"
+                      : "35mm 아나모픽 · 펜트하우스 톤"}
                   </div>
                 </button>
 
@@ -341,9 +399,13 @@ export function CastConsent({
                       : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
                   }`}
                 >
-                  <div className="text-xs font-bold">웹툰 무빙툰</div>
+                  <div className="text-xs font-bold">
+                    {genre === "rofan" ? "로판 웹소설 표지풍" : "웹툰 무빙툰"}
+                  </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
-                    네이버 로맨스릴러 작화
+                    {genre === "rofan"
+                      ? "어느 날 공주가 되어버렸다 작화"
+                      : "네이버 로맨스릴러 작화"}
                   </div>
                 </button>
               </div>

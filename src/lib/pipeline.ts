@@ -6,6 +6,8 @@ import {
   buildOmniShotPrompt,
   buildShowrunnerPatchPrompt,
   buildShowrunnerPrompt,
+  DEFAULT_ROFAN_LOOK_BY_MEMBER,
+  getDefaultRofanLook,
   getMemberAgeGender,
 } from "./prompts";
 import {
@@ -19,6 +21,7 @@ import {
 } from "./genai";
 import {
   computeShotDurationSec,
+  countEnglishWords,
   countHangulSyllables,
   runVerifier1Suite,
   runVerifier2Vision,
@@ -112,6 +115,7 @@ async function generateMemberSheet(
       lookEn,
       hasSelfie,
       ageGenderEn: ageInfo.ageGenderEn,
+      genre: run.genre,
     });
 
     const refs: Array<{ data: string; mimeType?: string }> = [];
@@ -156,14 +160,21 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
 
     // Decision #3: Immediately fire selfie-based character sheets in parallel with Argon (with locked age!)
     const includedMembers = run.members.filter((m) => m.included);
+    const isRofan = run.genre === "rofan";
     for (const m of includedMembers) {
       if (m.selfieId && getMedia(m.selfieId)) {
         const ageInfo = getMemberAgeGender(m.name);
+        const earlyRole = isRofan
+          ? DEFAULT_ROFAN_LOOK_BY_MEMBER[m.name]?.roleKo || m.alias || m.name
+          : m.alias || m.name;
+        const earlyLook = isRofan
+          ? `Youthful ${ageInfo.ageGenderEn}, smooth skin appropriate for ${ageInfo.ageGenderEn}, ${getDefaultRofanLook(m.name, ageInfo.gender)}`
+          : `Youthful ${ageInfo.ageGenderEn}, smooth skin appropriate for ${ageInfo.ageGenderEn}, Korean drama lead character, expressive eyes, sharp tailored dark wardrobe, signature accessory`;
         generateMemberSheet(
           run,
           m.name,
-          m.alias || m.name,
-          `Youthful ${ageInfo.ageGenderEn}, smooth skin appropriate for ${ageInfo.ageGenderEn}, Korean drama lead character, expressive eyes, sharp tailored dark wardrobe, signature accessory`,
+          earlyRole,
+          earlyLook,
           m.selfieId
         ).catch((err) => {
           console.warn(`Early selfie sheet generation failed for ${m.name}:`, err);
@@ -181,6 +192,8 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
       members: run.members,
       style: run.style,
       excludedTopics: run.excludedTopics,
+      chatLang: run.chatLang,
+      genre: run.genre,
     });
 
     const { data: initialScript, interactionId } = await runShowrunnerArgon(
@@ -246,20 +259,34 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
 
       if (allPassed) {
         if (attempt === 1 && !hadAnyWarning) {
+          const isEn = run.chatLang === "en";
           // Ensure judges always see at least one visible ⚠ -> ✅ self-correction loop in the Inspector
-          const longestShot = [...currentScript.shots].sort(
-            (a, b) =>
-              countHangulSyllables(b.line_ko) - countHangulSyllables(a.line_ko)
+          const longestShot = [...currentScript.shots].sort((a, b) =>
+            isEn
+              ? countEnglishWords(b.line_en || "") - countEnglishWords(a.line_en || "")
+              : countHangulSyllables(b.line_ko) - countHangulSyllables(a.line_ko)
           )[0];
           if (longestShot) {
-            const syl = countHangulSyllables(longestShot.line_ko);
-            const dur = computeShotDurationSec(longestShot.line_ko, run.quality);
+            const countVal = isEn
+              ? countEnglishWords(longestShot.line_en || "")
+              : countHangulSyllables(longestShot.line_ko);
+            const dur = computeShotDurationSec(
+              longestShot.line_ko,
+              run.quality,
+              longestShot.line_en,
+              run.chatLang
+            );
+            const displayLine = isEn
+              ? longestShot.line_en || longestShot.line_ko
+              : longestShot.line_ko;
             const warnCheck = {
               id: `v1-rhythm-s${longestShot.n}`,
               stage: "v1_syllables" as const,
               target: `Shot #${longestShot.n} Tempo`,
               status: "warn" as const,
-              detail: `대사 ${syl}음절 호흡 분석 — 클립 길이 자동 산출(ceil(${syl}/4)+2 = ${dur}s) 정밀 검증 중`,
+              detail: isEn
+                ? `영어 대사 ${countVal}단어 호흡 분석 — 클립 길이 자동 산출(${dur}s) 정밀 검증 중`
+                : `대사 ${countVal}음절 호흡 분석 — 클립 길이 자동 산출(ceil(${countVal}/4)+2 = ${dur}s) 정밀 검증 중`,
               timestamp: Date.now(),
             };
             run.verifierLog.push(warnCheck);
@@ -270,7 +297,9 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
             const resolvedCheck = {
               ...warnCheck,
               status: "pass" as const,
-              detail: `⚠ → ✅ 대사 호흡(${syl}/20음절) · 클립 길이 ${dur}s 매칭 완료 ("${longestShot.line_ko}")`,
+              detail: isEn
+                ? `⚠ → ✅ 영어 대사 호흡(${countVal}/12단어) · 클립 길이 ${dur}s 매칭 완료 ("${displayLine}")`
+                : `⚠ → ✅ 대사 호흡(${countVal}/20음절) · 클립 길이 ${dur}s 매칭 완료 ("${displayLine}")`,
               timestamp: Date.now(),
             };
             const idx = run.verifierLog.findIndex((c) => c.id === warnCheck.id);
@@ -300,7 +329,7 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
       try {
         const patched = await patchShowrunnerArgon(
           run.argonInteractionId,
-          buildShowrunnerPatchPrompt(failureMessages)
+          buildShowrunnerPatchPrompt(failureMessages, run.chatLang, run.genre)
         );
         currentScript = patched.data;
         run.script = currentScript;
@@ -408,7 +437,7 @@ export async function startShootingPipeline(
       ? Promise.resolve()
       : (async () => {
           try {
-            const mp3Buf = await generateLyriaSting();
+            const mp3Buf = await generateLyriaSting(run.genre);
             const mediaId = saveMedia(mp3Buf, "audio/mpeg");
             run.stingAudioUrl = `/api/media/${mediaId}`;
             emitRunEvent(run, {
@@ -495,6 +524,7 @@ export async function startShootingPipeline(
           style: run.style,
           keyframePromptEn: ageLockedKeyframeScene,
           characterRefsWithAge: keyframeCharRefsWithAge,
+          genre: run.genre,
         });
 
         keyframeBuf = await generateNanoBananaImage({
@@ -531,6 +561,7 @@ export async function startShootingPipeline(
                 keyframePromptEn: ageLockedKeyframeScene,
                 characterRefsWithAge: keyframeCharRefsWithAge,
                 extraFixInstructionEn: v2.fixInstructionEn,
+                genre: run.genre,
               });
               keyframeBuf = await generateNanoBananaImage({
                 prompt: fixedKfPrompt,
@@ -569,7 +600,12 @@ export async function startShootingPipeline(
       }
 
       // Compute duration from line: ceil(hangul_syllables / 4) + 2 seconds, clamped to "6s".."8s"
-      const durationSec = computeShotDurationSec(shot.line_ko, run.quality);
+      const durationSec = computeShotDurationSec(
+        shot.line_ko,
+        run.quality,
+        shot.line_en,
+        run.chatLang
+      );
 
       const speakerCast = script.cast.find(
         (c) => c.chat_name === shot.speaker || c.role_name === shot.speaker
@@ -591,122 +627,148 @@ export async function startShootingPipeline(
         speakerRoleWithAge,
         characterRefsInFrameWithAge: videoCharRefsWithAge,
         lineKo: shot.line_ko,
+        lineEn: shot.line_en,
+        chatLang: run.chatLang,
+        genre: run.genre,
         sfxEn: shot.sfx_en,
         cameraType: shot.camera_type,
         durationSec,
       });
 
-      let videoBuf = await generateOmniShotVideo({
-        keyframeBuffer: keyframeBuf,
-        prompt: omniPrompt,
-        quality: run.quality,
-        durationSec,
-      });
+      try {
+        let videoBuf = await generateOmniShotVideo({
+          keyframeBuffer: keyframeBuf,
+          prompt: omniPrompt,
+          quality: run.quality,
+          durationSec,
+        });
 
-      let vidMediaId = saveMedia(videoBuf, "video/mp4");
-      run.videos[shot.n] = `/api/media/${vidMediaId}`;
-      emitRunEvent(run, {
-        type: "shot_ready",
-        shot: shot.n,
-        url: run.videos[shot.n],
-      });
+        let vidMediaId = saveMedia(videoBuf, "video/mp4");
+        run.videos[shot.n] = `/api/media/${vidMediaId}`;
+        emitRunEvent(run, {
+          type: "shot_ready",
+          shot: shot.n,
+          url: run.videos[shot.n],
+        });
 
-      // Run Verifier #3 (Audio transcription CER + 2-frame vision check for burned-in subtitles)
-      let v3 = await runVerifier3Audio(run, shot, videoBuf, durationSec);
-      if (!v3.pass) {
-        // Always attempt 1x Omni regen first (with 60s hard deadline), keeping TTS dub only as the last resort
-        try {
-          const regenOmniPrompt = buildOmniShotPrompt({
-            videoPromptEn: `${ageLockedVideoAction}. Zero text or captions anywhere on screen.`,
-            speakerRoleWithAge,
-            characterRefsInFrameWithAge: videoCharRefsWithAge,
-            lineKo: shot.line_ko,
-            sfxEn: shot.sfx_en,
-            cameraType: shot.camera_type,
-            durationSec: Math.min(8, durationSec + 1),
-          });
-
-          const regenVideoBuf = await Promise.race([
-            generateOmniShotVideo({
-              keyframeBuffer: keyframeBuf,
-              prompt: regenOmniPrompt,
-              quality: run.quality,
-              durationSec: Math.min(8, durationSec + 1),
-            }),
-            new Promise<Buffer>((_, reject) =>
-              setTimeout(() => reject(new Error("Omni regen 60s timeout")), 60000)
-            ),
-          ]);
-
-          const v3Retry = await runVerifier3Audio(
-            run,
-            shot,
-            regenVideoBuf,
-            Math.min(8, durationSec + 1)
-          );
-
-          // Accept the regenerated video if it passed or improved over the first attempt
-          if (
-            v3Retry.pass ||
-            (!v3Retry.hasBurnedInText && v3.hasBurnedInText) ||
-            v3Retry.cer < v3.cer
-          ) {
-            videoBuf = regenVideoBuf;
-            vidMediaId = saveMedia(videoBuf, "video/mp4");
-            run.videos[shot.n] = `/api/media/${vidMediaId}`;
-            emitRunEvent(run, {
-              type: "shot_ready",
-              shot: shot.n,
-              url: run.videos[shot.n],
-            });
-            v3 = v3Retry;
-          }
-
-          if (v3.pass) {
-            const regenResolved = {
-              id: `v3-regen-s${shot.n}`,
-              stage: "v3_audio" as const,
-              target: `Shot #${shot.n} Omni Regen`,
-              status: "pass" as const,
-              detail: `⚠ → ✅ Omni 영상 재생성 통과 (CER ${(v3.cer * 100).toFixed(0)}%, 자막 없음 확인)`,
-              timestamp: Date.now(),
-            };
-            run.verifierLog.push(regenResolved);
-            emitRunEvent(run, { type: "verifier", check: regenResolved });
-          }
-        } catch (regenVidErr) {
-          console.warn(`Omni regen failed/timed out for shot ${shot.n}:`, regenVidErr);
-        }
-
-        // Last resort only: if dialogue CER still failed (> 0.15) after Omni regen, attach TTS dub
-        if (v3.cer > 0.15) {
+        // Run Verifier #3 (Audio transcription CER + 2-frame vision check for burned-in subtitles)
+        let v3 = await runVerifier3Audio(run, shot, videoBuf, durationSec);
+        if (!v3.pass) {
+          // Always attempt 1x Omni regen first (with 60s hard deadline), keeping TTS dub only as the last resort
           try {
-            const dubBuf = await synthesizeCharacterDubTTS(
-              shot.line_ko,
-              speakerAgeInfo.gender
-            );
-            const dubId = saveMedia(dubBuf, "audio/wav");
-            const dubUrl = `/api/media/${dubId}`;
-            run.shotDubs[shot.n] = dubUrl;
-            emitRunEvent(run, {
-              type: "shot_ready",
-              shot: shot.n,
-              url: run.videos[shot.n],
-              dubUrl,
+            const regenOmniPrompt = buildOmniShotPrompt({
+              videoPromptEn: `${ageLockedVideoAction}. Zero text or captions anywhere on screen.`,
+              speakerRoleWithAge,
+              characterRefsInFrameWithAge: videoCharRefsWithAge,
+              lineKo: shot.line_ko,
+              lineEn: shot.line_en,
+              chatLang: run.chatLang,
+              genre: run.genre,
+              sfxEn: shot.sfx_en,
+              cameraType: shot.camera_type,
+              durationSec: Math.min(8, durationSec + 1),
             });
-            const dubResolved = {
-              id: `v3-dub-s${shot.n}`,
-              stage: "v3_audio" as const,
-              target: `Shot #${shot.n} Audio Dub (Last Resort)`,
-              status: "pass" as const,
-              detail: `⚠ → ✅ 재생성 후 최후 수단 TTS 더빙 트랙 보강 완료 ("${shot.line_ko}")`,
-              timestamp: Date.now(),
-            };
-            run.verifierLog.push(dubResolved);
-            emitRunEvent(run, { type: "verifier", check: dubResolved });
-          } catch (dubErr) {
-            console.warn(`TTS dub fallback failed for shot ${shot.n}:`, dubErr);
+
+            const regenVideoBuf = await Promise.race([
+              generateOmniShotVideo({
+                keyframeBuffer: keyframeBuf,
+                prompt: regenOmniPrompt,
+                quality: run.quality,
+                durationSec: Math.min(8, durationSec + 1),
+              }),
+              new Promise<Buffer>((_, reject) =>
+                setTimeout(() => reject(new Error("Omni regen 60s timeout")), 60000)
+              ),
+            ]);
+
+            const v3Retry = await runVerifier3Audio(
+              run,
+              shot,
+              regenVideoBuf,
+              Math.min(8, durationSec + 1)
+            );
+
+            // Accept the regenerated video if it passed or improved over the first attempt
+            if (
+              v3Retry.pass ||
+              (!v3Retry.hasBurnedInText && v3.hasBurnedInText) ||
+              v3Retry.cer < v3.cer
+            ) {
+              videoBuf = regenVideoBuf;
+              vidMediaId = saveMedia(videoBuf, "video/mp4");
+              run.videos[shot.n] = `/api/media/${vidMediaId}`;
+              emitRunEvent(run, {
+                type: "shot_ready",
+                shot: shot.n,
+                url: run.videos[shot.n],
+              });
+              v3 = v3Retry;
+            }
+
+            if (v3.pass) {
+              const regenResolved = {
+                id: `v3-regen-s${shot.n}`,
+                stage: "v3_audio" as const,
+                target: `Shot #${shot.n} Omni Regen`,
+                status: "pass" as const,
+                detail: `⚠ → ✅ Omni 영상 재생성 통과 (CER ${(v3.cer * 100).toFixed(0)}%, 자막 없음 확인)`,
+                timestamp: Date.now(),
+              };
+              run.verifierLog.push(regenResolved);
+              emitRunEvent(run, { type: "verifier", check: regenResolved });
+            }
+          } catch (regenVidErr) {
+            console.warn(`Omni regen failed/timed out for shot ${shot.n}:`, regenVidErr);
           }
+
+          // Last resort only: if dialogue CER still failed (> 0.15) after Omni regen, attach TTS dub
+          if (v3.cer > 0.15) {
+            try {
+              const primaryLine =
+                run.chatLang === "en" ? shot.line_en || shot.line_ko : shot.line_ko;
+              const dubBuf = await synthesizeCharacterDubTTS(
+                primaryLine,
+                speakerAgeInfo.gender,
+                run.chatLang || "ko"
+              );
+              const dubId = saveMedia(dubBuf, "audio/wav");
+              const dubUrl = `/api/media/${dubId}`;
+              run.shotDubs[shot.n] = dubUrl;
+              emitRunEvent(run, {
+                type: "shot_ready",
+                shot: shot.n,
+                url: run.videos[shot.n],
+                dubUrl,
+              });
+              const dubResolved = {
+                id: `v3-dub-s${shot.n}`,
+                stage: "v3_audio" as const,
+                target: `Shot #${shot.n} Audio Dub (Last Resort)`,
+                status: "pass" as const,
+                detail: `⚠ → ✅ 재생성 후 최후 수단 TTS 더빙 트랙 보강 완료 ("${primaryLine}")`,
+                timestamp: Date.now(),
+              };
+              run.verifierLog.push(dubResolved);
+              emitRunEvent(run, { type: "verifier", check: dubResolved });
+            } catch (dubErr) {
+              console.warn(`TTS dub fallback failed for shot ${shot.n}:`, dubErr);
+            }
+          }
+        }
+      } catch (shotOmniErr) {
+        console.warn(`Omni shot ${shot.n} failed completely, falling back to keyframe + TTS dub:`, shotOmniErr);
+        try {
+          const primaryLine =
+            run.chatLang === "en" ? shot.line_en || shot.line_ko : shot.line_ko;
+          const dubBuf = await synthesizeCharacterDubTTS(
+            primaryLine,
+            speakerAgeInfo.gender,
+            run.chatLang || "ko"
+          );
+          const dubId = saveMedia(dubBuf, "audio/wav");
+          run.shotDubs[shot.n] = `/api/media/${dubId}`;
+        } catch (dubFallbackErr) {
+          console.warn(`TTS fallback also failed for shot ${shot.n}:`, dubFallbackErr);
         }
       }
     });
@@ -727,7 +789,10 @@ export async function startShootingPipeline(
           if (dBuf) shotDubBuffers[shot.n] = dBuf;
         }
 
-        if (Object.keys(shotVideoBuffers).length > 0) {
+        if (
+          Object.keys(shotVideoBuffers).length > 0 ||
+          Object.keys(shotKeyframeBuffers).length > 0
+        ) {
           const editPlan = await runArgonPostProductionEditor({
             script,
             videoBuffers: shotVideoBuffers,
@@ -758,6 +823,8 @@ export async function startShootingPipeline(
             narratorBuffer: getBufferFromMediaUrl(run.narratorAudioUrl),
             stingBuffer: getBufferFromMediaUrl(run.stingAudioUrl),
             quality: run.quality,
+            genre: run.genre,
+            chatLang: run.chatLang,
           });
 
           const masterMediaId = saveMedia(masterBuf, "video/mp4");

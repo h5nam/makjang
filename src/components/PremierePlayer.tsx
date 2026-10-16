@@ -449,14 +449,34 @@ export function PremierePlayer({
 
         {/* STAGE 1: OPENING TITLE CARD */}
         {stage === "title" && (
-          <div className="w-full h-full flex flex-col items-center justify-center text-center px-8 relative bg-[radial-gradient(circle_at_center,rgba(200,16,46,0.22),#0B0B0C_72%)]">
+          <div
+            className={`w-full h-full flex flex-col items-center justify-center text-center px-8 relative ${
+              session.genre === "rofan"
+                ? "bg-[radial-gradient(circle_at_center,#580C1F_0%,#2A0610_58%,#140207_100%)] border-4 border-double border-[#D4B26A]/60"
+                : "bg-[radial-gradient(circle_at_center,rgba(200,16,46,0.22),#0B0B0C_72%)]"
+            }`}
+          >
             <div className="makjang-crash-zoom space-y-4 max-w-4xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xs border border-[#D4B26A]/50 bg-black/60 text-xs font-mono-code text-[#D4B26A]">
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1 rounded-xs border border-[#D4B26A]/60 ${
+                  session.genre === "rofan" ? "bg-[#26050C]/90" : "bg-black/60"
+                } text-xs font-mono-code text-[#D4B26A]`}
+              >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>실제 카카오톡 단톡방 영수증 기반 막장 드라마</span>
+                <span>
+                  {session.genre === "rofan"
+                    ? "칼레도르 제국 황실 기록보관소 · 단톡방 영수증 기반 로판 막장"
+                    : "실제 단톡방 영수증 기반 막장 드라마"}
+                </span>
               </div>
 
-              <h2 className="font-drama-serif text-4xl sm:text-6xl font-black text-[#F5F2EB] tracking-tight drop-shadow-[0_4px_24px_rgba(200,16,46,0.8)]">
+              <h2
+                className={`font-drama-serif text-4xl sm:text-6xl font-black tracking-tight ${
+                  session.genre === "rofan"
+                    ? "text-[#F5E6C8] drop-shadow-[0_4px_24px_rgba(212,178,106,0.55)]"
+                    : "text-[#F5F2EB] drop-shadow-[0_4px_24px_rgba(200,16,46,0.8)]"
+                }`}
+              >
                 《{script.title_ko}》
               </h2>
 
@@ -521,12 +541,17 @@ export function PremierePlayer({
               </div>
             )}
 
-            {/* Floating Torn-Paper KakaoTalk Receipt Overlay (Top-Right) */}
+            {/* Floating Torn-Paper Chat Receipt Overlay (Top-Right) */}
             {activeReceiptId && (
               <div className="absolute top-14 right-5 z-20 max-w-xs sm:max-w-sm">
                 <div className="torn-receipt px-3.5 py-2.5 rounded-b-sm shadow-2xl border border-black/20">
                   <div className="flex items-center justify-between gap-2 text-[10px] font-mono-code text-[#8A1022] font-bold border-b border-black/15 pb-1 mb-1">
-                    <span>KAKAOTALK RECEIPT #{String(activeReceiptId).padStart(3, "0")}</span>
+                    <span>
+                      {session.sourceFormat === "whatsapp"
+                        ? "WHATSAPP"
+                        : "KAKAOTALK"}{" "}
+                      RECEIPT #{String(activeReceiptId).padStart(3, "0")}
+                    </span>
                     <span>{activeReceiptLine?.date || ""}</span>
                   </div>
                   {activeReceiptLine && (
@@ -534,7 +559,7 @@ export function PremierePlayer({
                       {activeReceiptLine.user}: “{activeReceiptLine.text}”
                     </p>
                   )}
-                  {activeReceiptTextEn && (
+                  {activeReceiptTextEn && session.chatLang !== "en" && (
                     <p className="text-[11px] text-neutral-700 italic leading-snug mt-0.5">
                       “{activeReceiptTextEn}”
                     </p>
@@ -543,7 +568,7 @@ export function PremierePlayer({
               </div>
             )}
 
-            {/* Cinema Broadcast Lower-Third Subtitle Box (Korean + English for Foreign Judges) */}
+            {/* Cinema Broadcast Lower-Third Subtitle Box (Korean + English) */}
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent pt-12 pb-6 px-6 sm:px-12 z-20 flex flex-col items-center text-center">
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-xs bg-[#C8102E] text-white font-mono-code text-[11px] font-bold mb-2">
                 <span>{currentShot.speaker}</span>
@@ -556,12 +581,22 @@ export function PremierePlayer({
               </div>
 
               <p className="font-drama-serif text-xl sm:text-3xl md:text-4xl font-extrabold text-[#F5F2EB] tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">
-                “{currentShot.line_ko}”
+                “
+                {session.chatLang === "en"
+                  ? currentShot.line_en || currentShot.line_ko
+                  : currentShot.line_ko}
+                ”
               </p>
 
-              {currentShot.line_en && (
+              {(session.chatLang === "en"
+                ? currentShot.line_ko
+                : currentShot.line_en) && (
                 <p className="mt-1.5 text-sm sm:text-base md:text-lg font-medium text-[#D4B26A] drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                  “{currentShot.line_en}”
+                  “
+                  {session.chatLang === "en"
+                    ? currentShot.line_ko
+                    : currentShot.line_en}
+                  ”
                 </p>
               )}
             </div>
@@ -589,7 +624,13 @@ export function PremierePlayer({
                 className="absolute inset-0 w-full h-full object-cover cliffhanger-freeze opacity-55"
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/80" />
+            <div
+              className={`absolute inset-0 ${
+                session.genre === "rofan"
+                  ? "bg-gradient-to-t from-[#26050C] via-[#3A0812]/75 to-[#180309]/85"
+                  : "bg-gradient-to-t from-black via-black/65 to-black/80"
+              }`}
+            />
 
             <div className="relative z-20 max-w-3xl mx-auto px-6 text-center space-y-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -599,7 +640,11 @@ export function PremierePlayer({
                 className="w-[180px] sm:w-[220px] h-auto mx-auto select-none drop-shadow-[0_8px_24px_rgba(0,0,0,0.85)]"
               />
 
-              <p className="font-drama-serif text-xl sm:text-3xl font-extrabold text-[#F5F2EB] leading-snug drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">
+              <p
+                className={`font-drama-serif text-xl sm:text-3xl font-extrabold leading-snug drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] ${
+                  session.genre === "rofan" ? "text-[#F5E6C8]" : "text-[#F5F2EB]"
+                }`}
+              >
                 “{script.narrator_ko}”
               </p>
 

@@ -1,8 +1,19 @@
+export type ChatLineKind =
+  | "text"
+  | "photo"
+  | "video"
+  | "emoticon"
+  | "audio"
+  | "deleted"
+  | "link"
+  | "system";
+
 export interface ChatLine {
   id: number; // 1-indexed line number
   date: string; // e.g., "2026-10-12 23:14"
   user: string; // sender name in chat
   text: string;
+  kind?: ChatLineKind;
 }
 
 export interface MemberConfig {
@@ -42,8 +53,8 @@ export interface ShotSpec {
   trope_id: string;
   characters: string[]; // chat_name or role_name (max 3)
   speaker: string;
-  line_ko: string; // <= 20 Korean syllables
-  line_en: string; // natural English subtitle for foreign judges
+  line_ko: string; // <= 20 Korean syllables (or Korean subtitle when chatLang === "en")
+  line_en: string; // natural English dialogue/subtitle
   scene_ko: string;
   keyframe_prompt_en: string;
   video_prompt_en: string;
@@ -126,12 +137,17 @@ export type SSEEvent =
   | { type: "done" }
   | { type: "error"; message: string };
 
+export type GenreMode = "modern" | "rofan";
+
 export interface RunState {
   id: string;
   createdAt: number;
   roomTitle: string;
   lines: ChatLine[];
   members: MemberConfig[];
+  chatLang?: "ko" | "en";
+  sourceFormat?: "kakao" | "whatsapp";
+  genre?: GenreMode;
   style: "live" | "webtoon";
   excludedTopics: string[];
   quality: "draft" | "final";

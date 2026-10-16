@@ -22,7 +22,10 @@ export interface ParsedSessionData {
   lineCount: number;
   members: MemberConfig[];
   lines: ChatLine[];
-  sampleKey: "A_friends" | "B_family" | "C_work" | null;
+  sampleKey: "A_friends" | "B_family" | "C_work" | "D_seoul_squad" | null;
+  chatLang?: "ko" | "en";
+  sourceFormat?: "kakao" | "whatsapp";
+  genre?: "modern" | "rofan";
   passcode?: string;
 }
 

@@ -8,6 +8,7 @@ import { cleanJsonText, getAI } from "./genai";
 import {
   ArgonEditPlan,
   ChatLine,
+  GenreMode,
   ShotEditDecision,
   ShotSpec,
   ShowrunnerJSON,
@@ -237,18 +238,23 @@ async function renderTitleCardPng(
   width: number,
   height: number,
   script: ShowrunnerJSON,
-  outPath: string
+  outPath: string,
+  genre: GenreMode = "modern"
 ): Promise<void> {
+  const isRofan = genre === "rofan";
   const titleKo = escapeXml(`《${script.title_ko}》`);
   const titleEn = escapeXml(script.title_en || "MAKJANG ORIGINAL TRAILER");
   const logLines = wrapText(script.logline_ko || "", 34).map(escapeXml);
+  const badgeText = isRofan
+    ? "칼레도르 제국 황실 기록보관소 · 단톡방 영수증 기반 로판 막장"
+    : "실제 단톡방 영수증 기반 막장 드라마";
 
   const svg = `<svg width="${width}" height="${height}" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="bg" cx="50%" cy="50%" r="70%">
-        <stop offset="0%" stop-color="#3A0812"/>
-        <stop offset="55%" stop-color="#12090D"/>
-        <stop offset="100%" stop-color="#070709"/>
+        <stop offset="0%" stop-color="${isRofan ? "#580C1F" : "#3A0812"}"/>
+        <stop offset="55%" stop-color="${isRofan ? "#2E0611" : "#12090D"}"/>
+        <stop offset="100%" stop-color="${isRofan ? "#180309" : "#070709"}"/>
       </radialGradient>
       <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="#A88438"/>
@@ -257,17 +263,21 @@ async function renderTitleCardPng(
       </linearGradient>
     </defs>
     <rect width="1280" height="720" fill="url(#bg)"/>
-    <rect x="48" y="42" width="1184" height="636" fill="none" stroke="#D4B26A" stroke-opacity="0.35" stroke-width="2"/>
-    <circle cx="96" cy="88" r="22" fill="#C8102E" stroke="#F5F2EB" stroke-width="2"/>
+    <rect x="48" y="42" width="1184" height="636" fill="none" stroke="#D4B26A" stroke-opacity="${isRofan ? "0.7" : "0.35"}" stroke-width="${isRofan ? "3" : "2"}"/>
+    <circle cx="96" cy="88" r="22" fill="${isRofan ? "#8A1022" : "#C8102E"}" stroke="#D4B26A" stroke-width="2"/>
     <text x="96" y="96" fill="#FFFFFF" font-size="22" font-weight="900" font-family="sans-serif" text-anchor="middle">19</text>
-    <text x="132" y="95" fill="#D4B26A" font-size="18" font-weight="700" font-family="monospace" letter-spacing="3">MAKJANG ORIGINAL SERIES · EPISODE 1 TRAILER</text>
+    <text x="132" y="95" fill="#D4B26A" font-size="18" font-weight="700" font-family="monospace" letter-spacing="3">${
+      isRofan
+        ? "MAKJANG ROFAN SERIES · IMPERIAL COURT TRAILER"
+        : "MAKJANG ORIGINAL SERIES · EPISODE 1 TRAILER"
+    }</text>
 
-    <rect x="440" y="190" width="400" height="36" rx="4" fill="#181216" stroke="#D4B26A" stroke-opacity="0.6" stroke-width="1.5"/>
-    <text x="640" y="214" fill="#D4B26A" font-size="17" font-weight="700" font-family="sans-serif" text-anchor="middle">실제 카카오톡 단톡방 영수증 기반 막장 드라마</text>
+    <rect x="390" y="190" width="500" height="36" rx="4" fill="${isRofan ? "#2A0610" : "#181216"}" stroke="#D4B26A" stroke-opacity="0.75" stroke-width="1.5"/>
+    <text x="640" y="214" fill="#D4B26A" font-size="17" font-weight="700" font-family="sans-serif" text-anchor="middle">${badgeText}</text>
 
-    <text x="640" y="330" fill="#F5F2EB" font-size="68" font-weight="900" font-family="serif, sans-serif" text-anchor="middle">${titleKo}</text>
+    <text x="640" y="330" fill="${isRofan ? "#F5E6C8" : "#F5F2EB"}" font-size="64" font-weight="900" font-family="serif, sans-serif" text-anchor="middle">${titleKo}</text>
     <text x="640" y="388" fill="url(#gold)" font-size="26" font-weight="700" font-family="monospace, sans-serif" text-anchor="middle" letter-spacing="2">${titleEn}</text>
-    <line x1="420" y1="422" x2="860" y2="422" stroke="#C8102E" stroke-width="3"/>
+    <line x1="420" y1="422" x2="860" y2="422" stroke="${isRofan ? "#D4B26A" : "#C8102E"}" stroke-width="3"/>
     ${logLines
       .map(
         (line, idx) =>
@@ -285,7 +295,8 @@ async function renderShotHudOverlayPng(
   shot: ShotSpec,
   decision: ShotEditDecision,
   linesMap: Map<number, ChatLine>,
-  outPath: string
+  outPath: string,
+  chatLang: "ko" | "en" = "ko"
 ): Promise<void> {
   const evId = shot.evidence?.[0];
   const chatLine = evId ? linesMap.get(evId) : undefined;
@@ -293,10 +304,10 @@ async function renderShotHudOverlayPng(
     shot.receipts?.find((r) => r.line_id === evId)?.text_en || "";
 
   const receiptHeader = evId
-    ? `KAKAOTALK RECEIPT #L${String(evId).padStart(3, "0")} · ${escapeXml(
+    ? `CHAT RECEIPT #L${String(evId).padStart(3, "0")} · ${escapeXml(
         chatLine?.date || ""
       )}`
-    : "KAKAOTALK RECEIPT VERIFIED";
+    : "CHAT RECEIPT VERIFIED";
   const receiptKo = chatLine
     ? `${chatLine.user}: "${chatLine.text}"`
     : `근거 줄 #L${evId || 1}`;
@@ -305,8 +316,19 @@ async function renderShotHudOverlayPng(
     escapeXml
   );
 
-  const lineKo = escapeXml(`“${shot.line_ko}”`);
-  const lineEn = escapeXml(shot.line_en ? `“${shot.line_en}”` : "");
+  const isEn = chatLang === "en";
+  const primaryLine = escapeXml(
+    isEn ? `“${shot.line_en || shot.line_ko}”` : `“${shot.line_ko}”`
+  );
+  const secondaryLine = escapeXml(
+    isEn
+      ? shot.line_ko
+        ? `“${shot.line_ko}”`
+        : ""
+      : shot.line_en
+      ? `“${shot.line_en}”`
+      : ""
+  );
   const speakerBadge = escapeXml(`${shot.speaker} · ${shot.trope_id}`);
   const editBadge = escapeXml(
     `ARGON EDIT [${decision.trim_start_sec.toFixed(1)}s-${decision.trim_end_sec.toFixed(1)}s · ${decision.effect.toUpperCase()}]`
@@ -331,7 +353,7 @@ async function renderShotHudOverlayPng(
     <text x="46" y="42" fill="#FFFFFF" font-size="16" font-weight="900" font-family="sans-serif" text-anchor="middle">19</text>
     <text x="74" y="42" fill="#D4B26A" font-size="15" font-weight="700" font-family="monospace">SHOT ${shot.n}/5 · ${editBadge}</text>
 
-    <!-- Top-Right Torn KakaoTalk Receipt Card -->
+    <!-- Top-Right Torn Chat Receipt Card -->
     <g transform="translate(810, 22)">
       <rect x="0" y="0" width="442" height="${
         76 + receiptKoLines.length * 22 + receiptEnLines.length * 18
@@ -358,8 +380,8 @@ async function renderShotHudOverlayPng(
     <rect x="0" y="510" width="1280" height="210" fill="url(#botGrad)"/>
     <rect x="510" y="554" width="260" height="28" rx="4" fill="#C8102E"/>
     <text x="640" y="574" fill="#FFFFFF" font-size="15" font-weight="800" font-family="monospace, sans-serif" text-anchor="middle">${speakerBadge}</text>
-    <text x="640" y="630" fill="#F5F2EB" font-size="42" font-weight="900" font-family="serif, sans-serif" stroke="#000000" stroke-width="1.2" text-anchor="middle">${lineKo}</text>
-    <text x="640" y="672" fill="#D4B26A" font-size="22" font-weight="700" font-family="sans-serif" text-anchor="middle">${lineEn}</text>
+    <text x="640" y="630" fill="#F5F2EB" font-size="42" font-weight="900" font-family="serif, sans-serif" stroke="#000000" stroke-width="1.2" text-anchor="middle">${primaryLine}</text>
+    <text x="640" y="672" fill="#D4B26A" font-size="22" font-weight="700" font-family="sans-serif" text-anchor="middle">${secondaryLine}</text>
   </svg>`;
 
   await sharp(Buffer.from(svg)).resize(width, height).png().toFile(outPath);
@@ -369,8 +391,10 @@ async function renderEndingOverlayPng(
   width: number,
   height: number,
   script: ShowrunnerJSON,
-  outPath: string
+  outPath: string,
+  genre: GenreMode = "modern"
 ): Promise<void> {
+  const isRofan = genre === "rofan";
   const narrKoLines = wrapText(
     `“${script.narrator_ko || "다음 이 시간, 단톡방의 진실이 밝혀집니다."}”`,
     26
@@ -382,14 +406,14 @@ async function renderEndingOverlayPng(
   const nextTime = escapeXml(`다음 이 시간… NEXT TIME ON 《${script.title_ko}》`);
 
   const svg = `<svg width="${width}" height="${height}" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
-    <rect width="1280" height="720" fill="#090608" fill-opacity="0.68"/>
-    <rect x="54" y="46" width="1172" height="628" fill="none" stroke="#D4B26A" stroke-opacity="0.45" stroke-width="2"/>
-    <rect x="450" y="160" width="380" height="34" rx="4" fill="#C8102E"/>
+    <rect width="1280" height="720" fill="${isRofan ? "#26050C" : "#090608"}" fill-opacity="${isRofan ? "0.76" : "0.68"}"/>
+    <rect x="54" y="46" width="1172" height="628" fill="none" stroke="#D4B26A" stroke-opacity="${isRofan ? "0.75" : "0.45"}" stroke-width="${isRofan ? "3" : "2"}"/>
+    <rect x="450" y="160" width="380" height="34" rx="4" fill="${isRofan ? "#7A1022" : "#C8102E"}" stroke="${isRofan ? "#D4B26A" : "none"}"/>
     <text x="640" y="183" fill="#FFFFFF" font-size="16" font-weight="800" font-family="monospace" text-anchor="middle" letter-spacing="2">CLIFFHANGER · NEXT EPISODE PREVIEW</text>
     ${narrKoLines
       .map(
         (l, i) =>
-          `<text x="640" y="${285 + i * 58}" fill="#F5F2EB" font-size="46" font-weight="900" font-family="serif, sans-serif" text-anchor="middle">${l}</text>`
+          `<text x="640" y="${285 + i * 58}" fill="${isRofan ? "#F5E6C8" : "#F5F2EB"}" font-size="46" font-weight="900" font-family="serif, sans-serif" text-anchor="middle">${l}</text>`
       )
       .join("\n")}
     ${narrEnLines
@@ -418,10 +442,14 @@ export async function assembleMasterTrailerVideo(options: {
   narratorBuffer?: Buffer | null;
   stingBuffer?: Buffer | null;
   quality: "draft" | "final";
+  genre?: GenreMode;
+  chatLang?: "ko" | "en";
 }): Promise<Buffer> {
   const width = options.quality === "final" ? 1280 : 640;
   const height = options.quality === "final" ? 720 : 360;
   const fps = 24;
+  const genre: GenreMode = options.genre === "rofan" ? "rofan" : "modern";
+  const chatLang: "ko" | "en" = options.chatLang === "en" ? "en" : "ko";
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "makjang-edit-"));
   const linesMap = new Map<number, ChatLine>();
@@ -434,7 +462,7 @@ export async function assembleMasterTrailerVideo(options: {
     const titleDur = options.editPlan.opening_title_sec || 2.4;
     const titlePngPath = path.join(tmpDir, "title.png");
     const titleSegPath = path.join(tmpDir, "seg_00_title.mp4");
-    await renderTitleCardPng(width, height, options.script, titlePngPath);
+    await renderTitleCardPng(width, height, options.script, titlePngPath, genre);
 
     await execFileAsync("ffmpeg", [
       "-y",
@@ -538,7 +566,8 @@ export async function assembleMasterTrailerVideo(options: {
         shot,
         decision,
         linesMap,
-        hudPngPath
+        hudPngPath,
+        chatLang
       );
 
       // Build Argon's dynamic camera/zoom expression
@@ -674,11 +703,11 @@ export async function assembleMasterTrailerVideo(options: {
         endFreezePng,
       ]);
     } else {
-      await renderTitleCardPng(width, height, options.script, endFreezePng);
+      await renderTitleCardPng(width, height, options.script, endFreezePng, genre);
     }
 
     const endOverlayPng = path.join(tmpDir, "ending_overlay.png");
-    await renderEndingOverlayPng(width, height, options.script, endOverlayPng);
+    await renderEndingOverlayPng(width, height, options.script, endOverlayPng, genre);
 
     let endDur = options.editPlan.ending_freeze_sec || 4.0;
     const endSegPath = path.join(tmpDir, "seg_99_ending.mp4");

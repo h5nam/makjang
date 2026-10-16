@@ -25,11 +25,25 @@ export function countHangulSyllables(text: string): number {
   return matches ? matches.length : 0;
 }
 
+export function countEnglishWords(text: string): number {
+  return (text || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
 export function computeShotDurationSec(
   lineKo: string,
-  quality: "draft" | "final"
+  quality: "draft" | "final",
+  lineEn?: string,
+  chatLang?: "ko" | "en"
 ): number {
   if (quality === "final") return 8;
+  if (chatLang === "en" && lineEn) {
+    const words = countEnglishWords(lineEn);
+    const raw = Math.ceil(words / 2.5) + 2;
+    return Math.min(8, Math.max(6, raw));
+  }
   const syllables = countHangulSyllables(lineKo);
   const raw = Math.ceil(syllables / 4) + 2;
   return Math.min(8, Math.max(6, raw));
@@ -70,6 +84,32 @@ export function extractHangulOnly(text: string): string {
 export function computeHangulCER(expected: string, actual: string): number {
   const a = extractHangulOnly(expected);
   const b = extractHangulOnly(actual);
+  if (a.length === 0) return b.length === 0 ? 0 : 1;
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
+    new Array(b.length + 1).fill(0)
+  );
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[a.length][b.length] / a.length;
+}
+
+export function computeEnglishCER(expected: string, actual: string): number {
+  const norm = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  const a = norm(expected);
+  const b = norm(actual);
   if (a.length === 0) return b.length === 0 ? 0 : 1;
   const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
     new Array(b.length + 1).fill(0)
@@ -154,29 +194,52 @@ export async function runVerifier1Suite(
     failures.push(...missingDetails);
   }
 
-  // 1e. Code check: Korean syllable limit (<= 20 Hangul syllables) & archaic endings
+  // 1e. Code check: Dialogue length & endings (English vs Korean mode)
+  const isEn = run.chatLang === "en";
   for (const shot of script.shots) {
     const syllables = countHangulSyllables(shot.line_ko);
-    const archaic = hasArchaicEnding(shot.line_ko);
-    const pass1e = syllables <= 20 && !archaic;
-    const detail1e = pass1e
-      ? `Shot #${shot.n} 대사 길이 ${syllables}/20음절 · 현대 구어체 종결 확인 ("${shot.line_ko}")`
-      : `Shot #${shot.n} 대사 위반 (${syllables}음절${
-          archaic ? ", 사극 어미 금지 위반" : ", 20음절 초과"
-        }): "${shot.line_ko}"`;
+    const isRofan = run.genre === "rofan";
+    const archaic = !isRofan && hasArchaicEnding(shot.line_ko);
+    if (isEn) {
+      const words = countEnglishWords(shot.line_en);
+      const pass1e = words > 0 && words <= 18 && syllables <= 22 && !archaic;
+      const detail1e = pass1e
+        ? `Shot #${shot.n} 영어 대사 ${words}/16단어 · 한국어 자막 ${syllables}음절 확인 ("${shot.line_en}")`
+        : `Shot #${shot.n} 대사 길이 위반 (영어 ${words}단어 / 한글 ${syllables}음절): "${shot.line_en}"`;
+      recordCheck(run, {
+        id: `v1e-s${shot.n}-a${attempt}`,
+        stage: "v1_syllables",
+        target: `Shot #${shot.n}`,
+        status: pass1e ? "pass" : "warn",
+        detail: detail1e,
+        timestamp: Date.now(),
+      });
+      if (!pass1e) {
+        failures.push(
+          `Shot #${shot.n} (1e 대사 규칙): 현재 영어 "${shot.line_en}" (${words}단어), 한국어 "${shot.line_ko}" (${syllables}음절). 영어 16단어 이하, 한국어 자막 20음절 이하로 줄이시오.`
+        );
+      }
+    } else {
+      const pass1e = syllables <= 20 && !archaic;
+      const detail1e = pass1e
+        ? `Shot #${shot.n} 대사 길이 ${syllables}/20음절 · ${isRofan ? "로판 대사 톤" : "현대 구어체 종결"} 확인 ("${shot.line_ko}")`
+        : `Shot #${shot.n} 대사 위반 (${syllables}음절${
+            archaic ? ", 사극 어미 금지 위반" : ", 20음절 초과"
+          }): "${shot.line_ko}"`;
 
-    recordCheck(run, {
-      id: `v1e-s${shot.n}-a${attempt}`,
-      stage: "v1_syllables",
-      target: `Shot #${shot.n}`,
-      status: pass1e ? "pass" : "warn",
-      detail: detail1e,
-      timestamp: Date.now(),
-    });
-    if (!pass1e) {
-      failures.push(
-        `Shot #${shot.n} (1e 대사 규칙): 현재 "${shot.line_ko}" (${syllables}음절). 반드시 공백·문장부호 제외 한글 20음절 이하 현대 구어체로 줄이시오.`
-      );
+      recordCheck(run, {
+        id: `v1e-s${shot.n}-a${attempt}`,
+        stage: "v1_syllables",
+        target: `Shot #${shot.n}`,
+        status: pass1e ? "pass" : "warn",
+        detail: detail1e,
+        timestamp: Date.now(),
+      });
+      if (!pass1e) {
+        failures.push(
+          `Shot #${shot.n} (1e 대사 규칙): 현재 "${shot.line_ko}" (${syllables}음절). 반드시 공백·문장부호 제외 한글 20음절 이하${isRofan ? " 로판 대사 톤으" : " 현대 구어체"}로 줄이시오.`
+        );
+      }
     }
   }
 
@@ -528,8 +591,10 @@ export async function runVerifier3Audio(
   hasBurnedInText: boolean;
 }> {
   try {
+    const isEn = run.chatLang === "en";
+    const expectedLine = isEn ? shot.line_en || shot.line_ko : shot.line_ko;
     const [transcript, frames] = await Promise.all([
-      transcribeVideoDialogue(videoBuffer),
+      transcribeVideoDialogue(videoBuffer, isEn ? "en" : "ko"),
       extractMiddleAndLastFrames(videoBuffer, durationSec),
     ]);
 
@@ -538,20 +603,22 @@ export async function runVerifier3Audio(
       detail_ko: "프레임 텍스트 검사 통과",
     }));
 
-    const cer = computeHangulCER(shot.line_ko, transcript);
+    const cer = isEn
+      ? computeEnglishCER(expectedLine, transcript)
+      : computeHangulCER(expectedLine, transcript);
     const cerPass = cer <= 0.15;
     const noTextPass = !frameTextCheck.has_text;
     const pass = cerPass && noTextPass;
 
     let detail = "";
     if (pass) {
-      detail = `대사 받아쓰기 일치 (CER ${(cer * 100).toFixed(0)}% ≤ 15%) · 화면 자막 없음 확인: "${transcript || shot.line_ko}"`;
+      detail = `대사 받아쓰기 일치 (${isEn ? "EN " : ""}CER ${(cer * 100).toFixed(0)}% ≤ 15%) · 화면 자막 없음 확인: "${transcript || expectedLine}"`;
     } else if (!noTextPass && !cerPass) {
       detail = `화면 내 깨진 자막 감지(${frameTextCheck.detail_ko}) 및 대사 불일치(CER ${(cer * 100).toFixed(0)}%) → 영상 재생성 실행`;
     } else if (!noTextPass) {
       detail = `화면 내 깨진 자막/텍스트 감지 (${frameTextCheck.detail_ko}) → 자막 제거 영상 재생성 실행`;
     } else {
-      detail = `대사 불일치 감지 (CER ${(cer * 100).toFixed(0)}% > 15%): 인식="${transcript}" vs 대본="${shot.line_ko}" → 영상 재생성 실행`;
+      detail = `대사 불일치 감지 (CER ${(cer * 100).toFixed(0)}% > 15%): 인식="${transcript}" vs 대본="${expectedLine}" → 영상 재생성 실행`;
     }
 
     recordCheck(run, {

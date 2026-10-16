@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadSampleChat, parseKakaoChat } from "@/lib/parser";
+import {
+  extractChatTxtFromZip,
+  loadSampleChat,
+  parseKakaoChat,
+  SampleChatKey,
+} from "@/lib/parser";
 import { saveRun } from "@/lib/store";
 import { RunState } from "@/lib/types";
 import crypto from "crypto";
@@ -7,19 +12,27 @@ import crypto from "crypto";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sampleKey, text, filename } = body as {
-      sampleKey?: "A_friends" | "B_family" | "C_work";
+    const { sampleKey, text, zipBase64, filename } = body as {
+      sampleKey?: SampleChatKey;
       text?: string;
+      zipBase64?: string;
       filename?: string;
     };
 
-    const parsed = sampleKey
-      ? loadSampleChat(sampleKey)
-      : parseKakaoChat(text || "", filename || "KakaoTalk_Chat.txt");
+    let parsed: ReturnType<typeof parseKakaoChat>;
+    if (sampleKey) {
+      parsed = loadSampleChat(sampleKey);
+    } else if (zipBase64) {
+      const zipBuf = Buffer.from(zipBase64, "base64");
+      const { content } = extractChatTxtFromZip(zipBuf);
+      parsed = parseKakaoChat(content, filename || "WhatsApp_Chat.zip");
+    } else {
+      parsed = parseKakaoChat(text || "", filename || "KakaoTalk_Chat.txt");
+    }
 
     if (!parsed.lines || parsed.lines.length === 0) {
       return NextResponse.json(
-        { error: "유효한 카카오톡 대화를 찾을 수 없습니다." },
+        { error: "유효한 카카오톡·WhatsApp 대화를 찾을 수 없습니다." },
         { status: 400 }
       );
     }
@@ -33,6 +46,8 @@ export async function POST(req: NextRequest) {
       roomTitle: parsed.roomTitle,
       lines: parsed.lines,
       members: parsed.members,
+      chatLang: parsed.chatLang,
+      sourceFormat: parsed.sourceFormat,
       style: "live",
       excludedTopics: [],
       quality: qualityEnv,
@@ -55,6 +70,8 @@ export async function POST(req: NextRequest) {
       lineCount: run.lines.length,
       members: run.members,
       lines: run.lines,
+      chatLang: run.chatLang,
+      sourceFormat: run.sourceFormat,
       sampleKey: sampleKey || null,
     });
   } catch (err: any) {
