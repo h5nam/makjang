@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { MemberConfig } from "@/lib/types";
+import React, { useEffect, useState } from "react";
+import { MemberConfig, SSEEvent } from "@/lib/types";
 import { ParsedSessionData } from "./LandingUpload";
+import { QRCodeSVG } from "qrcode.react";
 import {
   UserCheck,
   UserX,
@@ -12,6 +13,8 @@ import {
   ArrowLeft,
   Sparkles,
   QrCode,
+  X,
+  ExternalLink,
 } from "lucide-react";
 
 interface CastConsentProps {
@@ -23,7 +26,6 @@ interface CastConsentProps {
     excludedTopics: string[];
     autoApprove: boolean;
   }) => void;
-  onOpenQrModal?: (memberName: string) => void;
 }
 
 const TOPIC_OPTIONS = [
@@ -38,7 +40,6 @@ export function CastConsent({
   session,
   onBack,
   onStarted,
-  onOpenQrModal,
 }: CastConsentProps) {
   const [members, setMembers] = useState<MemberConfig[]>(session.members);
   const [style, setStyle] = useState<"live" | "webtoon">("live");
@@ -47,6 +48,37 @@ export function CastConsent({
   const [autoApprove, setAutoApprove] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [qrMember, setQrMember] = useState<string | null>(null);
+  const [originUrl, setOriginUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOriginUrl(window.location.origin);
+    }
+  }, []);
+
+  // Listen for live mobile audition selfie uploads via SSE
+  useEffect(() => {
+    const es = new EventSource(`/api/run/${session.runId}/events`);
+    es.onmessage = (evt) => {
+      try {
+        const data = JSON.parse(evt.data) as SSEEvent;
+        if (data.type === "audition_selfie") {
+          const mediaId = data.selfieUrl.split("/").pop();
+          setMembers((prev) =>
+            prev.map((m) =>
+              m.name === data.member
+                ? { ...m, selfieId: mediaId, included: true }
+                : m
+            )
+          );
+        }
+      } catch {
+        // ignore
+      }
+    };
+    return () => es.close();
+  }, [session.runId]);
 
   function toggleMember(idx: number) {
     setMembers((prev) =>
@@ -64,7 +96,6 @@ export function CastConsent({
     setMembers((prev) =>
       prev.map((m, i) => {
         if (i !== idx) return m;
-        // Toggle between detached (undefined) and original sample selfieId
         const origSelfieId = session.members[idx]?.selfieId;
         return {
           ...m,
@@ -112,6 +143,11 @@ export function CastConsent({
     }
   }
 
+  const auditionUrl =
+    qrMember && originUrl
+      ? `${originUrl}/audition/${session.runId}/${encodeURIComponent(qrMember)}`
+      : "";
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Header Bar */}
@@ -120,7 +156,7 @@ export function CastConsent({
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-xs font-mono-code text-[#9A968E] hover:text-[#F5F2EB]"
+              className="inline-flex items-center gap-1.5 text-xs font-mono-code text-[#9A968E] hover:text-[#F5F2EB] cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>다른 단톡방 선택</span>
@@ -153,7 +189,7 @@ export function CastConsent({
               단톡방 멤버 ({members.filter((m) => m.included).length}/{members.length}명 출연)
             </h2>
             <span className="text-xs font-mono-code text-[#9A968E]">
-              셀카 첨부 시 본인 닮은 배우 · 미첨부 시 성격 기반 가상 배우 캐스팅
+              QR 오디션으로 본인 셀카 업로드 가능
             </span>
           </div>
 
@@ -203,7 +239,7 @@ export function CastConsent({
                         <button
                           type="button"
                           onClick={() => toggleMember(idx)}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[11px] font-mono-code transition-colors ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xs text-[11px] font-mono-code transition-colors cursor-pointer ${
                             m.included
                               ? "bg-[#2E9B68]/20 text-[#2E9B68] border border-[#2E9B68]/40"
                               : "bg-white/5 text-[#9A968E] border border-white/10"
@@ -245,21 +281,21 @@ export function CastConsent({
                             <button
                               type="button"
                               onClick={() => toggleSelfieDetach(idx)}
-                              className="text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-[#D4B26A]/30 text-[#D4B26A] hover:bg-[#D4B26A]/10"
+                              className="text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-[#D4B26A]/30 text-[#D4B26A] hover:bg-[#D4B26A]/10 cursor-pointer"
                             >
-                              {m.selfieId ? "셀카 해제 (가상배우)" : "샘플 셀카 다시 연결"}
+                              {m.selfieId
+                                ? "셀카 해제 (가상배우)"
+                                : "샘플 셀카 다시 연결"}
                             </button>
                           )}
-                          {onOpenQrModal && (
-                            <button
-                              type="button"
-                              onClick={() => onOpenQrModal(m.name)}
-                              className="inline-flex items-center gap-1 text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-white/15 text-[#9A968E] hover:text-[#F5F2EB]"
-                            >
-                              <QrCode className="w-3 h-3" />
-                              <span>QR 셀카 오디션</span>
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => setQrMember(m.name)}
+                            className="inline-flex items-center gap-1 text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-white/15 text-[#F5F2EB]/80 hover:border-[#D4B26A] hover:text-[#D4B26A] cursor-pointer"
+                          >
+                            <QrCode className="w-3 h-3" />
+                            <span>QR 셀카 오디션</span>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -282,7 +318,7 @@ export function CastConsent({
                 <button
                   type="button"
                   onClick={() => setStyle("live")}
-                  className={`p-3 rounded-sm border text-left transition-all ${
+                  className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
                     style === "live"
                       ? "bg-[#D4B26A]/15 border-[#D4B26A] text-[#F5F2EB]"
                       : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
@@ -297,7 +333,7 @@ export function CastConsent({
                 <button
                   type="button"
                   onClick={() => setStyle("webtoon")}
-                  className={`p-3 rounded-sm border text-left transition-all ${
+                  className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
                     style === "webtoon"
                       ? "bg-[#D4B26A]/15 border-[#D4B26A] text-[#F5F2EB]"
                       : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
@@ -324,7 +360,7 @@ export function CastConsent({
                       key={topic}
                       type="button"
                       onClick={() => toggleTopic(topic)}
-                      className={`px-2.5 py-1 rounded-xs text-xs font-mono-code border transition-colors ${
+                      className={`px-2.5 py-1 rounded-xs text-xs font-mono-code border transition-colors cursor-pointer ${
                         active
                           ? "bg-[#C8102E]/20 border-[#C8102E] text-[#F5F2EB]"
                           : "bg-[#0B0B0C] border-white/10 text-[#9A968E] hover:border-white/25"
@@ -397,6 +433,49 @@ export function CastConsent({
           </div>
         </div>
       </div>
+
+      {/* QR Audition Modal */}
+      {qrMember && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-[#141417] border border-[#D4B26A] rounded-sm max-w-sm w-full p-6 space-y-5 relative text-center">
+            <button
+              type="button"
+              onClick={() => setQrMember(null)}
+              className="absolute top-4 right-4 text-[#9A968E] hover:text-white cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-mono-code text-[#D4B26A] uppercase tracking-wider">
+                MOBILE SELFIE AUDITION
+              </span>
+              <h3 className="font-drama-serif text-xl font-bold text-[#F5F2EB]">
+                {qrMember} 님의 모바일 셀카 오디션
+              </h3>
+              <p className="text-xs text-[#9A968E]">
+                스마트폰 카메라로 아래 QR을 스캔해 셀카를 올리면 즉시 캐릭터 시트에 반영됩니다.
+              </p>
+            </div>
+
+            <div className="bg-white p-4 rounded-sm inline-block mx-auto">
+              {auditionUrl && <QRCodeSVG value={auditionUrl} size={180} />}
+            </div>
+
+            <div className="space-y-2">
+              <a
+                href={auditionUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-mono-code text-[#D4B26A] hover:underline"
+              >
+                <span>새 탭에서 오디션 페이지 열기</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

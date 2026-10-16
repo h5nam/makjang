@@ -293,9 +293,13 @@ function getBufferFromMediaUrl(url?: string): Buffer | null {
   return item ? item.buffer : null;
 }
 
-export async function startShootingPipeline(runId: string): Promise<void> {
+export async function startShootingPipeline(
+  runId: string,
+  options?: { keyframesOnly?: boolean }
+): Promise<void> {
   const run = getRun(runId);
   if (!run || !run.script) return;
+  const keyframesOnly = Boolean(options?.keyframesOnly);
 
   try {
     run.status = "shooting";
@@ -321,38 +325,42 @@ export async function startShootingPipeline(runId: string): Promise<void> {
       })
     );
 
-    // 2. Fire Narrator TTS + Lyria Sting in parallel with the 5 shots
-    const narratorTask = (async () => {
-      try {
-        const wavBuf = await synthesizeNarratorTTS(
-          script.narrator_ko || "다음 이 시간, 단톡방의 진실이 밝혀집니다."
-        );
-        const mediaId = saveMedia(wavBuf, "audio/wav");
-        run.narratorAudioUrl = `/api/media/${mediaId}`;
-        emitRunEvent(run, {
-          type: "audio_ready",
-          kind: "narrator",
-          url: run.narratorAudioUrl,
-        });
-      } catch (err) {
-        console.warn("Narrator TTS failed:", err);
-      }
-    })();
+    // 2. Fire Narrator TTS + Lyria Sting in parallel with the 5 shots (unless keyframesOnly)
+    const narratorTask = keyframesOnly
+      ? Promise.resolve()
+      : (async () => {
+          try {
+            const wavBuf = await synthesizeNarratorTTS(
+              script.narrator_ko || "다음 이 시간, 단톡방의 진실이 밝혀집니다."
+            );
+            const mediaId = saveMedia(wavBuf, "audio/wav");
+            run.narratorAudioUrl = `/api/media/${mediaId}`;
+            emitRunEvent(run, {
+              type: "audio_ready",
+              kind: "narrator",
+              url: run.narratorAudioUrl,
+            });
+          } catch (err) {
+            console.warn("Narrator TTS failed:", err);
+          }
+        })();
 
-    const stingTask = (async () => {
-      try {
-        const mp3Buf = await generateLyriaSting();
-        const mediaId = saveMedia(mp3Buf, "audio/mpeg");
-        run.stingAudioUrl = `/api/media/${mediaId}`;
-        emitRunEvent(run, {
-          type: "audio_ready",
-          kind: "sting",
-          url: run.stingAudioUrl,
-        });
-      } catch (err) {
-        console.warn("Lyria sting failed:", err);
-      }
-    })();
+    const stingTask = keyframesOnly
+      ? Promise.resolve()
+      : (async () => {
+          try {
+            const mp3Buf = await generateLyriaSting();
+            const mediaId = saveMedia(mp3Buf, "audio/mpeg");
+            run.stingAudioUrl = `/api/media/${mediaId}`;
+            emitRunEvent(run, {
+              type: "audio_ready",
+              kind: "sting",
+              url: run.stingAudioUrl,
+            });
+          } catch (err) {
+            console.warn("Lyria sting failed:", err);
+          }
+        })();
 
     // 3. Process all 5 shots in parallel: Keyframe -> Verifier#2 -> Omni Video -> Verifier#3
     const shotTasks = (script.shots || []).map(async (shot: ShotSpec) => {
@@ -376,77 +384,84 @@ export async function startShootingPipeline(runId: string): Promise<void> {
         }
       }
 
-      // Generate Keyframe
-      const kfPrompt = buildKeyframePrompt({
-        style: run.style,
-        keyframePromptEn: shot.keyframe_prompt_en,
-        characterNames: shotChars,
-      });
+      let keyframeBuf = getBufferFromMediaUrl(run.keyframes[shot.n]);
+      if (!keyframeBuf) {
+        // Generate Keyframe
+        const kfPrompt = buildKeyframePrompt({
+          style: run.style,
+          keyframePromptEn: shot.keyframe_prompt_en,
+          characterNames: shotChars,
+        });
 
-      let keyframeBuf = await generateNanoBananaImage({
-        prompt: kfPrompt,
-        aspectRatio: "16:9",
-        referenceImagesB64: sheetBuffers.map((b) => ({
-          data: b.toString("base64"),
-          mimeType: "image/jpeg",
-        })),
-      });
+        keyframeBuf = await generateNanoBananaImage({
+          prompt: kfPrompt,
+          aspectRatio: "16:9",
+          referenceImagesB64: sheetBuffers.map((b) => ({
+            data: b.toString("base64"),
+            mimeType: "image/jpeg",
+          })),
+        });
 
-      let kfMediaId = saveMedia(keyframeBuf, "image/jpeg");
-      run.keyframes[shot.n] = `/api/media/${kfMediaId}`;
-      emitRunEvent(run, {
-        type: "keyframe_ready",
-        shot: shot.n,
-        url: run.keyframes[shot.n],
-      });
+        let kfMediaId = saveMedia(keyframeBuf, "image/jpeg");
+        run.keyframes[shot.n] = `/api/media/${kfMediaId}`;
+        emitRunEvent(run, {
+          type: "keyframe_ready",
+          shot: shot.n,
+          url: run.keyframes[shot.n],
+        });
 
-      // Run Verifier #2 (Vision consistency)
-      if (sheetBuffers.length > 0) {
-        const v2 = await runVerifier2Vision(
-          run,
-          shot,
-          sheetBuffers,
-          keyframeBuf,
-          charDescs
-        );
-        if (!v2.pass) {
-          // Single-shot keyframe regeneration with fix instruction
-          try {
-            const fixedKfPrompt = buildKeyframePrompt({
-              style: run.style,
-              keyframePromptEn: shot.keyframe_prompt_en,
-              characterNames: shotChars,
-              extraFixInstructionEn: v2.fixInstructionEn,
-            });
-            keyframeBuf = await generateNanoBananaImage({
-              prompt: fixedKfPrompt,
-              aspectRatio: "16:9",
-              referenceImagesB64: sheetBuffers.map((b) => ({
-                data: b.toString("base64"),
-                mimeType: "image/jpeg",
-              })),
-            });
-            kfMediaId = saveMedia(keyframeBuf, "image/jpeg");
-            run.keyframes[shot.n] = `/api/media/${kfMediaId}`;
-            emitRunEvent(run, {
-              type: "keyframe_ready",
-              shot: shot.n,
-              url: run.keyframes[shot.n],
-            });
-            const resolvedV2 = {
-              id: `v2-fix-s${shot.n}`,
-              stage: "v2_vision" as const,
-              target: `Shot #${shot.n} Keyframe`,
-              status: "pass" as const,
-              detail: `⚠ → ✅ 키프레임 재생성 완료 (${v2.fixInstructionEn.slice(0, 60)}...)`,
-              timestamp: Date.now(),
-            };
-            run.verifierLog.push(resolvedV2);
-            emitRunEvent(run, { type: "verifier", check: resolvedV2 });
-          } catch (regenKfErr) {
-            console.warn(`Keyframe regen failed for shot ${shot.n}:`, regenKfErr);
+        // Run Verifier #2 (Vision consistency)
+        if (sheetBuffers.length > 0) {
+          const v2 = await runVerifier2Vision(
+            run,
+            shot,
+            sheetBuffers,
+            keyframeBuf,
+            charDescs
+          );
+          if (!v2.pass) {
+            // Single-shot keyframe regeneration with fix instruction
+            try {
+              const fixedKfPrompt = buildKeyframePrompt({
+                style: run.style,
+                keyframePromptEn: shot.keyframe_prompt_en,
+                characterNames: shotChars,
+                extraFixInstructionEn: v2.fixInstructionEn,
+              });
+              keyframeBuf = await generateNanoBananaImage({
+                prompt: fixedKfPrompt,
+                aspectRatio: "16:9",
+                referenceImagesB64: sheetBuffers.map((b) => ({
+                  data: b.toString("base64"),
+                  mimeType: "image/jpeg",
+                })),
+              });
+              kfMediaId = saveMedia(keyframeBuf, "image/jpeg");
+              run.keyframes[shot.n] = `/api/media/${kfMediaId}`;
+              emitRunEvent(run, {
+                type: "keyframe_ready",
+                shot: shot.n,
+                url: run.keyframes[shot.n],
+              });
+              const resolvedV2 = {
+                id: `v2-fix-s${shot.n}`,
+                stage: "v2_vision" as const,
+                target: `Shot #${shot.n} Keyframe`,
+                status: "pass" as const,
+                detail: `⚠ → ✅ 키프레임 재생성 완료 (${v2.fixInstructionEn.slice(0, 60)}...)`,
+                timestamp: Date.now(),
+              };
+              run.verifierLog.push(resolvedV2);
+              emitRunEvent(run, { type: "verifier", check: resolvedV2 });
+            } catch (regenKfErr) {
+              console.warn(`Keyframe regen failed for shot ${shot.n}:`, regenKfErr);
+            }
           }
         }
+      }
+
+      if (keyframesOnly) {
+        return;
       }
 
       // Generate Video via gemini-omni-1.1-flash

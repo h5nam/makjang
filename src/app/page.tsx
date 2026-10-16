@@ -4,12 +4,28 @@ import React, { useState } from "react";
 import { LandingUpload, ParsedSessionData } from "@/components/LandingUpload";
 import { CastConsent } from "@/components/CastConsent";
 import { WritersRoom } from "@/components/WritersRoom";
+import { ScriptApprove } from "@/components/ScriptApprove";
+import { PremierePlayer } from "@/components/PremierePlayer";
+import { ShowrunnerJSON, VerifierResult } from "@/lib/types";
 
-type Step = "upload" | "consent" | "writers_room";
+type Step = "upload" | "consent" | "writers_room" | "approve" | "premiere";
+
+interface ProductionAssets {
+  script: ShowrunnerJSON;
+  characterSheets: Record<string, string>;
+  keyframes: Record<number, string>;
+  videos: Record<number, string>;
+  shotDubs: Record<number, string>;
+  narratorAudioUrl?: string;
+  stingAudioUrl?: string;
+  verifierLog: VerifierResult[];
+  status: string;
+}
 
 export default function HomePage() {
   const [step, setStep] = useState<Step>("upload");
   const [session, setSession] = useState<ParsedSessionData | null>(null);
+  const [assets, setAssets] = useState<ProductionAssets | null>(null);
 
   return (
     <main className="min-h-screen flex flex-col justify-between bg-[#0B0B0C] text-[#F5F2EB]">
@@ -31,7 +47,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono-code">
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono-code">
           <span
             className={`px-2 py-0.5 rounded-xs ${
               step === "upload"
@@ -61,6 +77,26 @@ export default function HomePage() {
           >
             3. WRITERS&apos; ROOM
           </span>
+          <span className="text-white/20">→</span>
+          <span
+            className={`px-2 py-0.5 rounded-xs ${
+              step === "approve"
+                ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
+                : "text-[#9A968E]"
+            }`}
+          >
+            4. STORYBOARD
+          </span>
+          <span className="text-white/20">→</span>
+          <span
+            className={`px-2 py-0.5 rounded-xs ${
+              step === "premiere"
+                ? "bg-[#C8102E] text-white font-bold"
+                : "text-[#9A968E]"
+            }`}
+          >
+            5. PREMIERE
+          </span>
         </div>
       </header>
 
@@ -70,6 +106,7 @@ export default function HomePage() {
           <LandingUpload
             onParsed={(data) => {
               setSession(data);
+              setAssets(null);
               setStep("consent");
             }}
           />
@@ -88,9 +125,51 @@ export default function HomePage() {
         {step === "writers_room" && session && (
           <WritersRoom
             session={session}
-            onProceedToApproveOrPremiere={() => {
-              // Milestone 3 will transition to ScriptApprove / Premiere
+            onProceedToApproveOrPremiere={(state) => {
+              setAssets(state);
+              if (state.status === "premiere") {
+                setStep("premiere");
+              } else {
+                setStep("approve");
+              }
             }}
+          />
+        )}
+
+        {step === "approve" && session && assets && (
+          <ScriptApprove
+            session={session}
+            initialScript={assets.script}
+            initialSheets={assets.characterSheets}
+            initialKeyframes={assets.keyframes}
+            initialVideos={assets.videos}
+            initialShotDubs={assets.shotDubs}
+            initialNarratorUrl={assets.narratorAudioUrl}
+            initialStingUrl={assets.stingAudioUrl}
+            initialVerifierLog={assets.verifierLog}
+            initialStatus={assets.status}
+            onEnterPremiere={(finalState) => {
+              setAssets({
+                ...finalState,
+                status: "premiere",
+              });
+              setStep("premiere");
+            }}
+          />
+        )}
+
+        {step === "premiere" && session && assets && (
+          <PremierePlayer
+            session={session}
+            initialScript={assets.script}
+            initialSheets={assets.characterSheets}
+            initialKeyframes={assets.keyframes}
+            initialVideos={assets.videos}
+            initialShotDubs={assets.shotDubs}
+            initialNarratorUrl={assets.narratorAudioUrl}
+            initialStingUrl={assets.stingAudioUrl}
+            initialVerifierLog={assets.verifierLog}
+            onBackToStoryboard={() => setStep("approve")}
           />
         )}
       </div>
