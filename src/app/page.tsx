@@ -6,7 +6,7 @@ import { CastConsent } from "@/components/CastConsent";
 import { WritersRoom } from "@/components/WritersRoom";
 import { ScriptApprove } from "@/components/ScriptApprove";
 import { PremierePlayer } from "@/components/PremierePlayer";
-import { ShowrunnerJSON, VerifierResult } from "@/lib/types";
+import { ArgonEditPlan, ShowrunnerJSON, VerifierResult } from "@/lib/types";
 
 type Step = "upload" | "consent" | "writers_room" | "approve" | "premiere";
 
@@ -18,6 +18,8 @@ interface ProductionAssets {
   shotDubs: Record<number, string>;
   narratorAudioUrl?: string;
   stingAudioUrl?: string;
+  masterVideoUrl?: string;
+  editPlan?: ArgonEditPlan;
   verifierLog: VerifierResult[];
   status: string;
 }
@@ -146,6 +148,8 @@ export default function HomePage() {
             initialShotDubs={assets.shotDubs}
             initialNarratorUrl={assets.narratorAudioUrl}
             initialStingUrl={assets.stingAudioUrl}
+            initialMasterVideoUrl={assets.masterVideoUrl}
+            initialEditPlan={assets.editPlan}
             initialVerifierLog={assets.verifierLog}
             initialStatus={assets.status}
             onEnterPremiere={(finalState) => {
@@ -168,6 +172,8 @@ export default function HomePage() {
             initialShotDubs={assets.shotDubs}
             initialNarratorUrl={assets.narratorAudioUrl}
             initialStingUrl={assets.stingAudioUrl}
+            initialMasterVideoUrl={assets.masterVideoUrl}
+            initialEditPlan={assets.editPlan}
             initialVerifierLog={assets.verifierLog}
             onBackToStoryboard={() => setStep("approve")}
           />

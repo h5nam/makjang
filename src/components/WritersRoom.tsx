@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArgonEditPlan,
   CastMember,
   ChatLine,
   SeedItem,
@@ -32,6 +33,8 @@ interface WritersRoomProps {
     shotDubs: Record<number, string>;
     narratorAudioUrl?: string;
     stingAudioUrl?: string;
+    masterVideoUrl?: string;
+    editPlan?: ArgonEditPlan;
     verifierLog: VerifierResult[];
     status: string;
   }) => void;
@@ -58,6 +61,8 @@ export function WritersRoom({
   const [shotDubs, setShotDubs] = useState<Record<number, string>>({});
   const [narratorAudioUrl, setNarratorAudioUrl] = useState<string | undefined>();
   const [stingAudioUrl, setStingAudioUrl] = useState<string | undefined>();
+  const [masterVideoUrl, setMasterVideoUrl] = useState<string | undefined>();
+  const [editPlan, setEditPlan] = useState<ArgonEditPlan | undefined>();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const lineRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -136,6 +141,9 @@ export function WritersRoom({
         } else if (data.type === "audio_ready") {
           if (data.kind === "narrator") setNarratorAudioUrl(data.url);
           if (data.kind === "sting") setStingAudioUrl(data.url);
+        } else if (data.type === "master_ready") {
+          setMasterVideoUrl(data.url);
+          setEditPlan(data.editPlan);
         } else if (data.type === "error") {
           setErrorMsg(data.message);
         }
@@ -231,6 +239,8 @@ export function WritersRoom({
                   shotDubs,
                   narratorAudioUrl,
                   stingAudioUrl,
+                  masterVideoUrl,
+                  editPlan,
                   verifierLog,
                   status,
                 })

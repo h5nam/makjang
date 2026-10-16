@@ -65,6 +65,25 @@ export interface ShowrunnerJSON {
   narrator_en?: string;
 }
 
+export interface ShotEditDecision {
+  shot: number;
+  trim_start_sec: number;
+  trim_end_sec: number;
+  peak_moment_sec: number;
+  effect: "none" | "crash_zoom_end" | "triple_shock_zoom" | "flash_impact";
+  zoom_factor: number; // e.g. 1.15 - 1.35
+  transition_out: "hard_cut" | "flash_white" | "crimson_flash" | "fade_black";
+  bgm_duck_volume: number; // e.g. 0.12 - 0.30
+  frame_analysis_ko: string;
+}
+
+export interface ArgonEditPlan {
+  opening_title_sec: number;
+  ending_freeze_sec: number;
+  overall_edit_summary_ko: string;
+  shots: ShotEditDecision[];
+}
+
 export type VerifierStage =
   | "v1_existence"
   | "v1_validity"
@@ -72,7 +91,8 @@ export type VerifierStage =
   | "v1_safety"
   | "v1_syllables"
   | "v2_vision"
-  | "v3_audio";
+  | "v3_audio"
+  | "v4_edit";
 
 export interface VerifierResult {
   id: string;
@@ -101,6 +121,7 @@ export type SSEEvent =
   | { type: "keyframe_ready"; shot: number; url: string }
   | { type: "shot_ready"; shot: number; url: string; dubUrl?: string }
   | { type: "audio_ready"; kind: "narrator" | "sting"; url: string }
+  | { type: "master_ready"; url: string; editPlan: ArgonEditPlan }
   | { type: "audition_selfie"; member: string; selfieUrl: string }
   | { type: "done" }
   | { type: "error"; message: string };
@@ -132,6 +153,8 @@ export interface RunState {
   shotDubs: Record<number, string>; // shot.n -> /api/media/:id (fallback TTS dub)
   narratorAudioUrl?: string;
   stingAudioUrl?: string;
+  masterVideoUrl?: string;
+  editPlan?: ArgonEditPlan;
   error?: string;
   events: SSEEvent[];
   listeners: Set<(ev: SSEEvent) => void>;

@@ -14,6 +14,7 @@ RUN npm run build
 
 FROM base AS runner
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg fonts-noto-cjk && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8080

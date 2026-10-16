@@ -713,6 +713,66 @@ export async function startShootingPipeline(
 
     await Promise.all([narratorTask, stingTask, ...shotTasks]);
 
+    if (!keyframesOnly) {
+      try {
+        const shotVideoBuffers: Record<number, Buffer> = {};
+        const shotKeyframeBuffers: Record<number, Buffer> = {};
+        const shotDubBuffers: Record<number, Buffer> = {};
+        for (const shot of script.shots || []) {
+          const vBuf = getBufferFromMediaUrl(run.videos[shot.n]);
+          if (vBuf) shotVideoBuffers[shot.n] = vBuf;
+          const kBuf = getBufferFromMediaUrl(run.keyframes[shot.n]);
+          if (kBuf) shotKeyframeBuffers[shot.n] = kBuf;
+          const dBuf = getBufferFromMediaUrl(run.shotDubs[shot.n]);
+          if (dBuf) shotDubBuffers[shot.n] = dBuf;
+        }
+
+        if (Object.keys(shotVideoBuffers).length > 0) {
+          const editPlan = await runArgonPostProductionEditor({
+            script,
+            videoBuffers: shotVideoBuffers,
+            quality: run.quality,
+          });
+          run.editPlan = editPlan;
+
+          for (const dec of editPlan.shots || []) {
+            const editCheck = {
+              id: `v4-edit-s${dec.shot}`,
+              stage: "v4_edit" as const,
+              target: `Shot #${dec.shot} Argon Editor`,
+              status: "pass" as const,
+              detail: `🎬 [${dec.trim_start_sec.toFixed(1)}s~${dec.trim_end_sec.toFixed(1)}s | Peak ${dec.peak_moment_sec.toFixed(1)}s | ${dec.effect} → ${dec.transition_out}] ${dec.frame_analysis_ko}`,
+              timestamp: Date.now(),
+            };
+            run.verifierLog.push(editCheck);
+            emitRunEvent(run, { type: "verifier", check: editCheck });
+          }
+
+          const masterBuf = await assembleMasterTrailerVideo({
+            script,
+            lines: run.lines,
+            editPlan,
+            videoBuffers: shotVideoBuffers,
+            keyframeBuffers: shotKeyframeBuffers,
+            dubBuffers: shotDubBuffers,
+            narratorBuffer: getBufferFromMediaUrl(run.narratorAudioUrl),
+            stingBuffer: getBufferFromMediaUrl(run.stingAudioUrl),
+            quality: run.quality,
+          });
+
+          const masterMediaId = saveMedia(masterBuf, "video/mp4");
+          run.masterVideoUrl = `/api/media/${masterMediaId}`;
+          emitRunEvent(run, {
+            type: "master_ready",
+            url: run.masterVideoUrl,
+            editPlan,
+          });
+        }
+      } catch (masterErr) {
+        console.warn("Master trailer video assembly warning:", masterErr);
+      }
+    }
+
     run.status = "premiere";
     emitRunEvent(run, { type: "status", status: "premiere" });
     emitRunEvent(run, { type: "done" });

@@ -39,6 +39,7 @@ export function ReceiptsDrawer({
   const v1Count = verifierLog.filter((v) => v.stage.startsWith("v1_")).length;
   const v2Count = verifierLog.filter((v) => v.stage === "v2_vision").length;
   const v3Count = verifierLog.filter((v) => v.stage === "v3_audio").length;
+  const v4Count = verifierLog.filter((v) => v.stage === "v4_edit").length;
 
   return (
     <div className="rounded-sm bg-[#141417] border border-white/10 overflow-hidden">
@@ -47,7 +48,7 @@ export function ReceiptsDrawer({
         <div className="flex items-center gap-2.5">
           <FileText className="w-4 h-4 text-[#D4B26A]" />
           <h2 className="font-drama-serif text-base font-bold text-[#F5F2EB]">
-            단톡방 원본 영수증 & 3중 검증 감사 기록 (Chat Receipts & Verifier Audit)
+            단톡방 원본 영수증 & 4단계 검증·편집 감사 기록 (Chat Receipts & Verifier Audit)
           </h2>
         </div>
 
@@ -61,6 +62,11 @@ export function ReceiptsDrawer({
           <span className="px-2 py-0.5 rounded-xs bg-[#2E9B68]/20 text-[#2E9B68] font-bold">
             V3 음성검증 ({v3Count})
           </span>
+          {v4Count > 0 && (
+            <span className="px-2 py-0.5 rounded-xs bg-[#D4B26A]/25 text-[#D4B26A] font-bold">
+              V4 Argon 컷편집 ({v4Count})
+            </span>
+          )}
         </div>
       </div>
 

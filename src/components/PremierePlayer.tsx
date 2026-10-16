@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArgonEditPlan,
   ChatLine,
   ShowrunnerJSON,
   SSEEvent,
@@ -18,6 +19,7 @@ import {
   Sparkles,
   ArrowLeft,
   Film,
+  Download,
 } from "lucide-react";
 
 interface PremierePlayerProps {
@@ -29,11 +31,13 @@ interface PremierePlayerProps {
   initialShotDubs: Record<number, string>;
   initialNarratorUrl?: string;
   initialStingUrl?: string;
+  initialMasterVideoUrl?: string;
+  initialEditPlan?: ArgonEditPlan;
   initialVerifierLog: VerifierResult[];
   onBackToStoryboard: () => void;
 }
 
-type PlaybackStage = "title" | "shot" | "cliffhanger";
+type PlaybackStage = "master" | "title" | "shot" | "cliffhanger";
 
 export function PremierePlayer({
   session,
@@ -44,6 +48,8 @@ export function PremierePlayer({
   initialShotDubs,
   initialNarratorUrl,
   initialStingUrl,
+  initialMasterVideoUrl,
+  initialEditPlan,
   initialVerifierLog,
   onBackToStoryboard,
 }: PremierePlayerProps) {
@@ -61,10 +67,18 @@ export function PremierePlayer({
   const [stingAudioUrl, setStingAudioUrl] = useState<string | undefined>(
     initialStingUrl
   );
+  const [masterVideoUrl, setMasterVideoUrl] = useState<string | undefined>(
+    initialMasterVideoUrl
+  );
+  const [editPlan, setEditPlan] = useState<ArgonEditPlan | undefined>(
+    initialEditPlan
+  );
   const [verifierLog, setVerifierLog] =
     useState<VerifierResult[]>(initialVerifierLog);
 
-  const [stage, setStage] = useState<PlaybackStage>("title");
+  const [stage, setStage] = useState<PlaybackStage>(
+    initialMasterVideoUrl ? "master" : "title"
+  );
   const [shotIndex, setShotIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [muted, setMuted] = useState<boolean>(false);
@@ -113,6 +127,10 @@ export function PremierePlayer({
         } else if (data.type === "audio_ready") {
           if (data.kind === "narrator") setNarratorAudioUrl(data.url);
           if (data.kind === "sting") setStingAudioUrl(data.url);
+        } else if (data.type === "master_ready") {
+          setMasterVideoUrl(data.url);
+          setEditPlan(data.editPlan);
+          setStage("master");
         } else if (data.type === "verifier") {
           setVerifierLog((prev) => {
             const idx = prev.findIndex((item) => item.id === data.check.id);
@@ -130,6 +148,20 @@ export function PremierePlayer({
     };
     return () => es.close();
   }, [session.runId]);
+
+  useEffect(() => {
+    if (stage === "master") {
+      if (stingAudioRef.current && !stingAudioRef.current.paused) {
+        stingAudioRef.current.pause();
+      }
+      if (dubAudioRef.current && !dubAudioRef.current.paused) {
+        dubAudioRef.current.pause();
+      }
+      if (narratorAudioRef.current && !narratorAudioRef.current.paused) {
+        narratorAudioRef.current.pause();
+      }
+    }
+  }, [stage]);
 
   // Title Card auto-advance & Lyria 3 orchestral sting
   useEffect(() => {
@@ -203,8 +235,12 @@ export function PremierePlayer({
 
   function handleReplay() {
     setIsPlaying(true);
-    setShotIndex(0);
-    setStage("title");
+    if (masterVideoUrl) {
+      setStage("master");
+    } else {
+      setShotIndex(0);
+      setStage("title");
+    }
   }
 
   function handleSelectShot(idx: number) {
@@ -267,6 +303,24 @@ export function PremierePlayer({
 
         {/* Shot Stepper Pill Bar */}
         <div className="flex flex-wrap items-center gap-1.5 font-mono-code text-xs">
+          {masterVideoUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(true);
+                setStage("master");
+              }}
+              className={`px-2.5 py-1 rounded-xs border cursor-pointer flex items-center gap-1 ${
+                stage === "master"
+                  ? "bg-[#C8102E] text-white border-[#C8102E] font-bold"
+                  : "bg-[#141417] text-[#D4B26A] border-[#D4B26A]/40 hover:text-white"
+              }`}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span>MASTER CUT</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -333,6 +387,17 @@ export function PremierePlayer({
             <RotateCcw className="w-3.5 h-3.5" />
             <span>처음부터</span>
           </button>
+
+          {masterVideoUrl && (
+            <a
+              href={masterVideoUrl}
+              download={`makjang_${session.runId.slice(0, 8)}.mp4`}
+              className="px-2.5 py-1 rounded-xs bg-[#D4B26A]/15 border border-[#D4B26A]/50 text-[#D4B26A] hover:bg-[#D4B26A]/25 flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>MP4 저장</span>
+            </a>
+          )}
         </div>
       </div>
 
@@ -350,6 +415,7 @@ export function PremierePlayer({
           </div>
 
           <div className="font-mono-code text-[11px] text-[#F5F2EB]/70">
+            {stage === "master" && "ARGON MASTER CUT · FULL TRAILER"}
             {stage === "title" && "OPENING TITLE"}
             {stage === "shot" &&
               currentShot &&
@@ -357,6 +423,29 @@ export function PremierePlayer({
             {stage === "cliffhanger" && "NEXT EPISODE CLIFFHANGER"}
           </div>
         </div>
+
+        {/* STAGE 0: ARGON MASTER CUT */}
+        {stage === "master" && masterVideoUrl && (
+          <div className="w-full h-full relative bg-black flex items-center justify-center">
+            <video
+              key={masterVideoUrl}
+              src={masterVideoUrl}
+              autoPlay
+              controls
+              playsInline
+              muted={muted}
+              className="w-full h-full object-contain"
+            />
+            {editPlan?.overall_edit_summary_ko && (
+              <div className="absolute bottom-14 left-5 z-20 max-w-xl px-3 py-1.5 rounded-xs bg-black/75 border border-[#D4B26A]/40 text-[11px] text-[#D4B26A] pointer-events-none">
+                <span className="font-mono-code font-bold mr-1.5">
+                  [ARGON EDIT]
+                </span>
+                <span>{editPlan.overall_edit_summary_ko}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* STAGE 1: OPENING TITLE CARD */}
         {stage === "title" && (

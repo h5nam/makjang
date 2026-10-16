@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  ArgonEditPlan,
   ChatLine,
   ShotSpec,
   ShowrunnerJSON,
@@ -31,6 +32,8 @@ interface ScriptApproveProps {
   initialShotDubs: Record<number, string>;
   initialNarratorUrl?: string;
   initialStingUrl?: string;
+  initialMasterVideoUrl?: string;
+  initialEditPlan?: ArgonEditPlan;
   initialVerifierLog: VerifierResult[];
   initialStatus: string;
   onEnterPremiere: (finalState: {
@@ -41,6 +44,8 @@ interface ScriptApproveProps {
     shotDubs: Record<number, string>;
     narratorAudioUrl?: string;
     stingAudioUrl?: string;
+    masterVideoUrl?: string;
+    editPlan?: ArgonEditPlan;
     verifierLog: VerifierResult[];
   }) => void;
 }
@@ -72,6 +77,8 @@ export function ScriptApprove({
   initialShotDubs,
   initialNarratorUrl,
   initialStingUrl,
+  initialMasterVideoUrl,
+  initialEditPlan,
   initialVerifierLog,
   initialStatus,
   onEnterPremiere,
@@ -90,6 +97,12 @@ export function ScriptApprove({
   );
   const [stingAudioUrl, setStingAudioUrl] = useState<string | undefined>(
     initialStingUrl
+  );
+  const [masterVideoUrl, setMasterVideoUrl] = useState<string | undefined>(
+    initialMasterVideoUrl
+  );
+  const [editPlan, setEditPlan] = useState<ArgonEditPlan | undefined>(
+    initialEditPlan
   );
   const [verifierLog, setVerifierLog] =
     useState<VerifierResult[]>(initialVerifierLog);
@@ -133,6 +146,9 @@ export function ScriptApprove({
         } else if (data.type === "audio_ready") {
           if (data.kind === "narrator") setNarratorAudioUrl(data.url);
           if (data.kind === "sting") setStingAudioUrl(data.url);
+        } else if (data.type === "master_ready") {
+          setMasterVideoUrl(data.url);
+          setEditPlan(data.editPlan);
         } else if (data.type === "verifier") {
           setVerifierLog((prev) => {
             const idx = prev.findIndex((item) => item.id === data.check.id);
@@ -188,7 +204,10 @@ export function ScriptApprove({
   const isShootingOrDone = status === "shooting" || status === "premiere";
 
   const v2AndV3Logs = verifierLog.filter(
-    (v) => v.stage === "v2_vision" || v.stage === "v3_audio"
+    (v) =>
+      v.stage === "v2_vision" ||
+      v.stage === "v3_audio" ||
+      v.stage === "v4_edit"
   );
 
   return (
@@ -202,6 +221,7 @@ export function ScriptApprove({
             </span>
             <span className="text-xs font-mono-code text-[#9A968E]">
               KEYFRAMES {keyframeCount}/5 · VIDEOS {videoCount}/5
+              {masterVideoUrl ? " · MASTER CUT READY" : ""}
             </span>
           </div>
 
@@ -243,6 +263,8 @@ export function ScriptApprove({
                   shotDubs,
                   narratorAudioUrl,
                   stingAudioUrl,
+                  masterVideoUrl,
+                  editPlan,
                   verifierLog,
                 })
               }
@@ -254,8 +276,8 @@ export function ScriptApprove({
             >
               <Play className="w-4 h-4 fill-current" />
               <span>
-                {status === "premiere" || videoCount === 5
-                  ? "전 5샷 촬영 완료 · 시사회 극장 입장 (Premiere) →"
+                {status === "premiere" || masterVideoUrl
+                  ? "최종 편집본 완성 · 시사회 극장 입장 (Premiere) →"
                   : `시사회 미리보기 (${videoCount}/5 영상 완료)`}
               </span>
             </button>
