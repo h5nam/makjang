@@ -1,11 +1,25 @@
-# 막장 (MAKJANG) — Your Group Chat, Remade as a K-Drama
+# 막장톡 (MAKJANG TALK) — Your Group Chat, Remade as a K-Drama
+
+![막장톡](public/brand/og.jpg)
 
 > **Live Demo (Google Cloud Run, `asia-northeast3`)**: [https://makjang-3116986546.asia-northeast3.run.app](https://makjang-3116986546.asia-northeast3.run.app)  
-> **Judge Demo Passcode**: `makjang`
+> **Judge Demo Passcode**: `makjang`  
+> **Built during the Google DeepMind AI Hackathon Seoul (2026-10-16, 11:20–15:20 KST).** `docs/` and `data/` hold planning notes and fictional demo data prepared beforehand; all application code was written during the event.
 
-**Makjang** turns everyday KakaoTalk group-chat exports (`.txt` / `.csv`) into an over-the-top, broadcast-grade **60-second Korean makjang drama trailer** (*The Penthouse*, *Temptation of Wife*, *Love & War* style)—complete with **torn-paper chat receipts** (`RECEIPT #line_id`) proving that every single plot twist, secret, and accusation is grounded in a real message from your group chat.
+**막장톡** turns a KakaoTalk (`.csv` / `.txt`) or WhatsApp (`.txt` / `.zip`) group-chat export into Episode 1 of an over-the-top Korean *makjang* drama trailer starring the people in the chat — with **torn-paper chat receipts** (`RECEIPT #line_id`) proving that every plot twist, secret and accusation is grounded in a real message.
 
-Every generated trailer shot and chat receipt is **fully bilingual (Korean + natural English subtitles/translations)** so both Korean and international judges can follow every dramatic betrayal and verify every chat citation.
+- **Gemini 4 Argon is the showrunner:** it reads the whole chat in one 1M-token context, finds the seeds that span months, casts each member, writes a 5-shot trailer, and finally plans the edit (trims, crash zooms, transitions) for the master cut.
+- **Two genres:** *Modern Makjang* and *Romance Fantasy (로판)* — the same chat recast as dukes, villainesses and crown princes in a fictional empire.
+- **Audition by selfie, with consent:** each member can upload *their own* selfie via a QR link; everyone else is played by a fictional actor cast from their personality.
+- **Three verification loops** (grounding, character consistency, spoken-line accuracy) run visibly in the Writers' Room.
+- **Bilingual:** every line and receipt carries Korean + English, so international judges can follow every twist.
+
+| Sample room | Format | Language |
+|---|---|---|
+| A · 대학 동기 (friends) | KakaoTalk txt | Korean |
+| B · 우리가족 (family) | KakaoTalk txt | Korean |
+| C · 입사동기 (coworkers) | KakaoTalk txt | Korean |
+| D · Seoul Survivors 🇰🇷 | WhatsApp iOS / Android / zip | English |
 
 ---
 
