@@ -591,24 +591,27 @@ export function PremierePlayer({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/80" />
 
-            <div className="relative z-20 max-w-3xl mx-auto px-6 text-center space-y-5">
-              <div className="inline-block px-3 py-1 rounded-xs bg-[#C8102E] text-white font-mono-code text-xs font-bold tracking-widest">
-                CLIFFHANGER · GEMINI 3.8 FLASH TTS VOICE DESIGN
-              </div>
+            <div className="relative z-20 max-w-3xl mx-auto px-6 text-center space-y-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/logo-wordmark.png"
+                alt="막장톡"
+                className="w-[180px] sm:w-[220px] h-auto mx-auto select-none drop-shadow-[0_8px_24px_rgba(0,0,0,0.85)]"
+              />
 
-              <p className="font-drama-serif text-2xl sm:text-4xl font-extrabold text-[#F5F2EB] leading-snug drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">
+              <p className="font-drama-serif text-xl sm:text-3xl font-extrabold text-[#F5F2EB] leading-snug drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">
                 “{script.narrator_ko}”
               </p>
 
               {script.narrator_en && (
-                <p className="text-base sm:text-lg text-[#D4B26A] italic">
+                <p className="text-sm sm:text-base text-[#D4B26A] italic">
                   “{script.narrator_en}”
                 </p>
               )}
 
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <div className="font-drama-serif text-xl sm:text-2xl font-black text-[#D4B26A] tracking-widest border-y border-[#D4B26A]/50 py-1.5 px-6">
-                  다음 이 시간… (NEXT TIME ON 《{script.title_ko}》)
+                  다음 이 시간…
                 </div>
 
                 <button

@@ -82,19 +82,28 @@ export default function AuditionPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0B0C] text-[#F5F2EB] flex flex-col justify-between p-6 max-w-md mx-auto">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#C8102E] animate-pulse" />
-            <span className="font-drama-serif font-extrabold text-base text-[#F5F2EB]">
-              막장 <span className="text-[#D4B26A]">CAST AUDITION</span>
+    <main className="min-h-screen bg-[#0B0B0C] text-[#F5F2EB] flex flex-col justify-between max-w-md mx-auto">
+      <div>
+        <header className="h-16 px-6 flex items-center justify-between border-b border-white/[0.08] bg-[#0B0B0C]">
+          <a href="/" className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-symbol.png"
+              alt="막장톡"
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain"
+            />
+            <span className="font-drama-serif font-extrabold text-[20px] tracking-tight text-[#D4B26A]">
+              막장톡
             </span>
-          </div>
+          </a>
           <span className="text-xs font-mono-code text-[#9A968E]">
-            #{runId}
+            AUDITION · #{runId}
           </span>
-        </div>
+        </header>
+
+        <div className="p-6 space-y-6">
 
         <div className="space-y-1.5">
           <span className="px-2 py-0.5 rounded-xs bg-[#FEE500] text-[#191919] font-mono-code text-[11px] font-bold">
@@ -183,11 +192,12 @@ export default function AuditionPage() {
             {error}
           </div>
         )}
+        </div>
       </div>
 
-      <footer className="pt-8 text-center text-[11px] font-mono-code text-[#9A968E] flex items-center justify-center gap-1.5">
+      <footer className="pb-6 pt-4 text-center text-[11px] font-mono-code text-[#9A968E] flex items-center justify-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-[#D4B26A]" />
-        <span>MAKJANG MOBILE AUDITION · ZERO DB RETENTION</span>
+        <span>막장톡 (MAKJANG TALK) · ZERO DB RETENTION</span>
       </footer>
     </main>
   );

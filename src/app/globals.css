@@ -14,6 +14,7 @@
   --bubble: #FFFFFF;
   --chat-bg: #B2C7DA;
   --fg: #F5F5F5;
+  --fg-muted: #A3A3A3;
   --muted: #A3A3A3;
   --ok: #3BB273;
   --warn: #E0A526;
@@ -34,7 +35,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.font-drama {
+.font-drama,
+.font-drama-serif {
   font-family: "Nanum Myeongjo", "Song Myung", serif;
   letter-spacing: -0.02em;
 }
@@ -43,13 +45,14 @@ body {
   font-family: "Black Han Sans", sans-serif;
 }
 
-.font-mono-receipt {
+.font-mono-receipt,
+.font-mono-code {
   font-family: "JetBrains Mono", monospace;
 }
 
-/* Subtle 3.5% SVG film grain overlay on theater surfaces */
+/* Subtle 4% SVG film grain overlay on theater surfaces */
 .bg-grain {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 /* Perforated top receipt edge */
@@ -65,6 +68,21 @@ body {
   height: 6px;
   background-image: radial-gradient(circle at 6px 0, transparent 4px, var(--paper) 4.5px);
   background-size: 12px 6px;
+}
+
+/* 20s slow Ken Burns (scale 1 -> 1.08) for Hero */
+@keyframes hero-kenburns {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.08);
+  }
+}
+
+.animate-hero-kenburns {
+  animation: hero-kenburns 20s cubic-bezier(0.22, 0.61, 0.36, 1) infinite alternate;
+  will-change: transform;
 }
 
 @keyframes kenburns {
@@ -83,8 +101,84 @@ body {
   animation: kenburns 8s ease-in-out infinite alternate;
 }
 
+/* One-shot 80ms white thunder flash on hero entrance */
+@keyframes hero-thunder-flash {
+  0% {
+    opacity: 0.92;
+  }
+  12% {
+    opacity: 0;
+  }
+  24% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-thunder-once {
+  animation: hero-thunder-flash 420ms cubic-bezier(0.22, 0.61, 0.36, 1) 1 forwards;
+  pointer-events: none;
+}
+
+/* Logo entrance: 0.96 -> 1 after thunder flash */
+@keyframes logo-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-logo-enter {
+  animation: logo-reveal 320ms cubic-bezier(0.22, 0.61, 0.36, 1) 80ms 1 both;
+}
+
+/* Premiere crash zoom & cliffhanger freeze */
+@keyframes makjang-triple-zoom {
+  0% {
+    transform: scale(1);
+  }
+  33% {
+    transform: scale(1.08);
+  }
+  66% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1.22);
+  }
+}
+
+.makjang-crash-zoom {
+  animation: makjang-triple-zoom 650ms cubic-bezier(0.22, 0.61, 0.36, 1) 1 both;
+}
+
+.cliffhanger-freeze {
+  filter: contrast(1.18) saturate(0.85);
+  transform: scale(1.04);
+}
+
+/* Hide horizontal scrollbar on mobile snap carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-kenburns {
-    animation: none;
+  .animate-hero-kenburns,
+  .animate-kenburns,
+  .animate-thunder-once,
+  .animate-logo-enter,
+  .makjang-crash-zoom {
+    animation: none !important;
+    transform: none !important;
   }
 }

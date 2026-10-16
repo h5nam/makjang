@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LandingUpload, ParsedSessionData } from "@/components/LandingUpload";
 import { CastConsent } from "@/components/CastConsent";
 import { WritersRoom } from "@/components/WritersRoom";
@@ -28,78 +28,102 @@ export default function HomePage() {
   const [step, setStep] = useState<Step>("upload");
   const [session, setSession] = useState<ParsedSessionData | null>(null);
   const [assets, setAssets] = useState<ProductionAssets | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 24);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const isLanding = step === "upload";
 
   return (
-    <main className="min-h-screen flex flex-col justify-between bg-[#0B0B0C] text-[#F5F2EB]">
-      {/* Top Broadcast Header */}
-      <header className="w-full border-b border-white/10 px-6 py-3.5 flex items-center justify-between bg-[#0B0B0C]/90 backdrop-blur-xs sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setStep("upload")}
-            className="flex items-center gap-2.5 text-left cursor-pointer"
-          >
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#C8102E] animate-pulse" />
-            <span className="font-drama-serif text-lg font-extrabold tracking-tight text-[#F5F2EB]">
-              막장 <span className="text-[#D4B26A]">MAKJANG</span>
-            </span>
-          </button>
-          <span className="hidden sm:inline-block text-xs font-mono-code text-[#9A968E] border-l border-white/15 pl-3">
-            YOUR GROUP CHAT, REMADE AS A K-DRAMA
+    <main className="min-h-screen flex flex-col justify-between bg-[#0B0B0C] text-[#F5F5F5]">
+      {/* Header (64px, transparent over hero on landing, solid --ink after scroll or inside flow) */}
+      <header
+        className={`w-full h-16 px-5 sm:px-8 flex items-center justify-between transition-colors duration-300 z-40 ${
+          isLanding ? "fixed top-0 inset-x-0" : "sticky top-0"
+        } ${
+          !isLanding || scrolled
+            ? "bg-[#0B0B0C]/95 border-b border-[#2A2A2E] backdrop-blur-xs"
+            : "bg-transparent border-b border-transparent"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setStep("upload");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="flex items-center gap-2.5 text-left cursor-pointer group"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/logo-symbol.png"
+            alt="막장톡"
+            className="w-7 h-7 object-contain shrink-0"
+          />
+          <span className="font-drama-serif text-[20px] font-extrabold tracking-tight text-[#D4B26A] group-hover:opacity-90 transition-opacity">
+            막장톡
           </span>
-        </div>
+        </button>
 
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono-code">
-          <span
-            className={`px-2 py-0.5 rounded-xs ${
-              step === "upload"
-                ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
-                : "text-[#9A968E]"
-            }`}
+        {isLanding ? (
+          <a
+            href="#how-its-built"
+            className="text-[14px] text-[#A3A3A3] hover:text-[#D4B26A] transition-colors font-mono-code px-3 py-1.5 rounded-[4px] border border-transparent hover:border-[#2A2A2E]"
           >
-            1. UPLOAD
-          </span>
-          <span className="text-white/20">→</span>
-          <span
-            className={`px-2 py-0.5 rounded-xs ${
-              step === "consent"
-                ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
-                : "text-[#9A968E]"
-            }`}
-          >
-            2. CAST & CONSENT
-          </span>
-          <span className="text-white/20">→</span>
-          <span
-            className={`px-2 py-0.5 rounded-xs ${
-              step === "writers_room"
-                ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
-                : "text-[#9A968E]"
-            }`}
-          >
-            3. WRITERS&apos; ROOM
-          </span>
-          <span className="text-white/20">→</span>
-          <span
-            className={`px-2 py-0.5 rounded-xs ${
-              step === "approve"
-                ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
-                : "text-[#9A968E]"
-            }`}
-          >
-            4. STORYBOARD
-          </span>
-          <span className="text-white/20">→</span>
-          <span
-            className={`px-2 py-0.5 rounded-xs ${
-              step === "premiere"
-                ? "bg-[#C8102E] text-white font-bold"
-                : "text-[#9A968E]"
-            }`}
-          >
-            5. PREMIERE
-          </span>
-        </div>
+            How it&apos;s built
+          </a>
+        ) : (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono-code">
+            <span className="text-[#A3A3A3] hidden sm:inline">1. UPLOAD</span>
+            <span className="text-white/20 hidden sm:inline">→</span>
+            <span
+              className={`px-2 py-0.5 rounded-[4px] ${
+                step === "consent"
+                  ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
+                  : "text-[#A3A3A3]"
+              }`}
+            >
+              2. CAST & CONSENT
+            </span>
+            <span className="text-white/20">→</span>
+            <span
+              className={`px-2 py-0.5 rounded-[4px] ${
+                step === "writers_room"
+                  ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
+                  : "text-[#A3A3A3]"
+              }`}
+            >
+              3. WRITERS&apos; ROOM
+            </span>
+            <span className="text-white/20">→</span>
+            <span
+              className={`px-2 py-0.5 rounded-[4px] ${
+                step === "approve"
+                  ? "bg-[#D4B26A] text-[#0B0B0C] font-bold"
+                  : "text-[#A3A3A3]"
+              }`}
+            >
+              4. STORYBOARD
+            </span>
+            <span className="text-white/20">→</span>
+            <span
+              className={`px-2 py-0.5 rounded-[4px] ${
+                step === "premiere"
+                  ? "bg-[#C8102E] text-white font-bold"
+                  : "text-[#A3A3A3]"
+              }`}
+            >
+              5. PREMIERE
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -110,6 +134,7 @@ export default function HomePage() {
               setSession(data);
               setAssets(null);
               setStep("consent");
+              window.scrollTo({ top: 0, behavior: "instant" });
             }}
           />
         )}
@@ -120,6 +145,7 @@ export default function HomePage() {
             onBack={() => setStep("upload")}
             onStarted={() => {
               setStep("writers_room");
+              window.scrollTo({ top: 0, behavior: "instant" });
             }}
           />
         )}
@@ -134,6 +160,7 @@ export default function HomePage() {
               } else {
                 setStep("approve");
               }
+              window.scrollTo({ top: 0, behavior: "instant" });
             }}
           />
         )}
@@ -158,6 +185,7 @@ export default function HomePage() {
                 status: "premiere",
               });
               setStep("premiere");
+              window.scrollTo({ top: 0, behavior: "instant" });
             }}
           />
         )}
@@ -180,15 +208,26 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 px-6 py-3 flex flex-col sm:flex-row items-center justify-between text-xs text-[#9A968E] font-mono-code gap-2">
-        <span>
-          MAKJANG · K-DRAMA TRAILER GENERATOR WITH CHAT RECEIPTS
-        </span>
-        <span>
-          GEMINI 4 ARGON · NANO BANANA 2.1 · OMNI 1.1 FLASH · FLASH 3.8 TTS · LYRIA 3
-        </span>
-      </footer>
+      {/* In-Flow Footer (Landing has its own S6 Judge & Brand Footer) */}
+      {!isLanding && (
+        <footer className="border-t border-[#2A2A2E] px-6 py-4 flex flex-col sm:flex-row items-center justify-between text-[12px] text-[#A3A3A3] font-mono-code gap-2">
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-symbol.png"
+              alt="막장톡"
+              className="w-4 h-4 object-contain"
+            />
+            <span className="text-[#D4B26A] font-drama-serif font-extrabold">
+              막장톡
+            </span>
+            <span>· MAKJANG TALK</span>
+          </div>
+          <span>
+            GEMINI 4 ARGON · NANO BANANA 2.1 · OMNI 1.1 FLASH · 3.8 FLASH TTS · LYRIA 3
+          </span>
+        </footer>
+      )}
     </main>
   );
 }

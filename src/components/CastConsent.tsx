@@ -44,7 +44,9 @@ export function CastConsent({
   const [members, setMembers] = useState<MemberConfig[]>(session.members);
   const [style, setStyle] = useState<"live" | "webtoon">("live");
   const [excludedTopics, setExcludedTopics] = useState<string[]>([]);
-  const [passcode, setPasscode] = useState<string>("makjang");
+  const [passcode, setPasscode] = useState<string>(
+    session.passcode || "makjang"
+  );
   const [autoApprove, setAutoApprove] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
