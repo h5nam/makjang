@@ -256,7 +256,7 @@ export async function transcribeVideoDialogue(videoBuffer: Buffer): Promise<stri
       },
       {
         type: "text",
-        text: "이 영상에서 발화되는 한국어 대사만 정확히 받아쓰시오. 다른 설명이나 따옴표 없이 들리는 한국어 문장만 출력하시오.",
+        text: "이 영상에서 발화되는 한국어 대사만 정확히 받아쓰시오. 숫자는 아라비아 숫자 대신 한글 발음(예: 사십오만, 삼백이호)으로 적고, 다른 설명이나 따옴표 없이 들리는 한국어 문장만 출력하시오.",
       },
     ],
     generation_config: { thinking_level: "low" },
