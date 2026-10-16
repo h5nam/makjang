@@ -1,0 +1,1643 @@
+{
+ "meta": {
+  "version": 1,
+  "built": "2026-10-15",
+  "tiers": {
+   "G": "실존 친구에게 그대로 사용",
+   "Y": "코믹 변형(safe_twist)으로만 사용",
+   "R": "사용 금지 — safe_twist로 대체"
+  },
+  "sources": [
+   "PD저널 [막장 드라마 전성시대] ① 막장의 공식 (2015) https://www.pdjournal.com/news/articleView.html?idxno=56868",
+   "씨네21 [막장드라마의 모든 것] 인물 전형 (2009) https://m.cine21.com/news/view/?mag_id=54692",
+   "중앙일보 아직도 막장 찍는 지상파…김치·된장 싸대기 (일일극 14편 빈도 조사) https://www.joongang.co.kr/article/23152452",
+   "kdramalove.com Master List of 180 Korean Drama Cliches https://www.kdramalove.com/KoreanDramaCliches.html",
+   "티키 숏드라마 제작 경험 (director-rulebook.md)"
+  ],
+  "frequency_note": "중앙일보 조사: 지상파 일일극 14편 중 출생의 비밀 13편(93%), 불륜 12편(86%), 살인(청부) 12편(86%), 기억상실 10편(71%), 불치병 6편(43%)"
+ },
+ "tropes": [
+  {
+   "id": "birth_secret",
+   "cat": "출생·가족",
+   "ko": "출생의 비밀",
+   "en": "Birth secret",
+   "desc": "알고 보니 친부모가 따로 있다. 일일극 93%에 등장하는 1등 클리셰",
+   "ex": "왔다! 장보리, 하늘이시여",
+   "visual": "a sealed DNA test envelope trembling in her hands, thunder flashes through the window, she gasps",
+   "sfx": "thunder crack, orchestral hit",
+   "tier": "Y",
+   "triggers": [
+    "입양·가족사 얘기",
+    "'우리 집안에 저런 애 없는데' 농담",
+    "어릴 때 사진이 없다",
+    "부모님 얘기 피함"
+   ],
+   "safe_twist": "알고 보니 '치킨집 사장의 숨겨진 단골 손주' 같은 무해한 반전, 또는 본인이 지어낸 착각으로 끝남"
+  },
+  {
+   "id": "switched_at_birth",
+   "cat": "출생·가족",
+   "ko": "뒤바뀐 아이",
+   "en": "Switched at birth",
+   "desc": "병원에서 아이가 바뀌어 남의 집에서 자람",
+   "ex": "왔다! 장보리",
+   "visual": "two identical baby bassinets in a 1990s hospital nursery, a nurse's hand swapping name tags",
+   "sfx": "clock ticking, dramatic sting",
+   "tier": "Y",
+   "triggers": [
+    "생일이 같은 두 사람",
+    "서로 닮았다는 말",
+    "같은 병원 출신"
+   ],
+   "safe_twist": "단톡방 닉네임·프사가 바뀌어 있었던 사건으로"
+  },
+  {
+   "id": "dna_test",
+   "cat": "출생·가족",
+   "ko": "유전자 검사 결과지",
+   "en": "DNA test result reveal",
+   "desc": "봉투를 여는 손, '친자 확률 99.9%'",
+   "ex": "",
+   "visual": "close-up of a paper titled 유전자 검사 결과, the number 99.9% circled in red, trembling hands",
+   "sfx": "paper rustle, heartbeat",
+   "tier": "Y",
+   "triggers": [
+    "닮은꼴 논쟁",
+    "'너 우리 엄마 딸 아니지?' 농담"
+   ],
+   "safe_twist": "'닭다리 DNA 감정 결과: 지훈 99.9%' 같은 음식 감식"
+  },
+  {
+   "id": "half_sibling",
+   "cat": "출생·가족",
+   "ko": "알고 보니 이복남매",
+   "en": "Secret half-siblings",
+   "desc": "사랑하던 사이가 배다른 남매였다",
+   "ex": "위대한 조강지처",
+   "visual": "two people frozen across a table as an old family photo slides between them",
+   "sfx": "record scratch, sting",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "알고 보니 같은 초등학교 같은 반 짝꿍이었다"
+  },
+  {
+   "id": "returning_birth_mother",
+   "cat": "출생·가족",
+   "ko": "뒤늦게 나타난 생모(재력가)",
+   "en": "Wealthy birth mother returns",
+   "desc": "버리고 간 생모가 재벌이 되어 나타나 딸을 괴롭힌 자들을 응징",
+   "ex": "너는 내 운명, 흔들리지마",
+   "visual": "a glamorous woman in pearls steps out of a black sedan, sunglasses off, cold gaze",
+   "sfx": "car door thud, heels clicking",
+   "tier": "G",
+   "triggers": [
+    "누군가의 엄마가 단톡에 언급됨",
+    "'우리 엄마가 알면 가만 안 있어'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "inheritance_war",
+   "cat": "출생·가족",
+   "ko": "유산 상속 전쟁",
+   "en": "Inheritance war",
+   "desc": "회장님 유언장을 두고 형제·친척 전쟁",
+   "ex": "",
+   "visual": "a long mahogany table, family members glaring as a lawyer opens a will",
+   "sfx": "tense strings",
+   "tier": "G",
+   "triggers": [
+    "공동 물건·회비·포인트 나누기",
+    "정산 다툼",
+    "누가 뭘 가져갈지"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "will_swap",
+   "cat": "출생·가족",
+   "ko": "유언장 바꿔치기",
+   "en": "Swapped will",
+   "desc": "금고 속 유언장이 몰래 바뀐다",
+   "ex": "",
+   "visual": "gloved hands swapping documents in a safe by flashlight",
+   "sfx": "safe dial clicks",
+   "tier": "G",
+   "triggers": [
+    "삭제된 메시지",
+    "공지·투표 수정",
+    "'누가 공지 바꿨어?'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "mother_in_law",
+   "cat": "인물",
+   "ko": "악독 시어머니(재벌 사모님)",
+   "en": "Evil chaebol mother-in-law",
+   "desc": "우아한 사모님이 아들 일엔 돌변. '너 같이 근본도 없는 게'",
+   "ex": "너는 내 운명, 꽃보다 남자",
+   "visual": "an elegant woman in a hanbok-inspired silk blouse sips tea, then slams the cup down",
+   "sfx": "teacup clack",
+   "tier": "G",
+   "triggers": [
+    "누군가의 엄마 잔소리 인용",
+    "결혼·연애 반대 얘기"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "money_envelope",
+   "cat": "돈·재벌",
+   "ko": "돈봉투 '이 돈 받고 떠나'",
+   "en": "Money envelope to leave",
+   "desc": "두툼한 봉투를 테이블 위로 밀며 헤어지라 한다",
+   "ex": "꽃보다 남자",
+   "visual": "a thick white money envelope slowly pushed across a café table, she stares at it",
+   "sfx": "envelope slide, silence",
+   "tier": "G",
+   "triggers": [
+    "송금·더치페이",
+    "'돈 줄게 제발 그만해' 농담",
+    "기프티콘으로 무마"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "chaebol_heir",
+   "cat": "돈·재벌",
+   "ko": "숨겨진 재벌 3세",
+   "en": "Hidden chaebol heir",
+   "desc": "평범해 보였던 그가 사실 그룹 후계자",
+   "ex": "",
+   "visual": "a man in a cheap hoodie removes it to reveal a bespoke suit; bodyguards bow",
+   "sfx": "bodyguards' footsteps in unison",
+   "tier": "G",
+   "triggers": [
+    "늘 지각·여유",
+    "갑자기 비싼 물건",
+    "'우리 아빠 회사'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "chaebol_trainee",
+   "cat": "돈·재벌",
+   "ko": "말단 사원으로 위장한 후계자",
+   "en": "Heir disguised as trainee",
+   "desc": "회장 아들이 신입으로 입사",
+   "ex": "",
+   "visual": "a new employee badge flipped over revealing the group chairman's surname",
+   "sfx": "office murmur stops",
+   "tier": "G",
+   "triggers": [
+    "회사방 신입",
+    "새 팀원 미스터리"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "slush_fund",
+   "cat": "돈·재벌",
+   "ko": "비자금·횡령",
+   "en": "Slush fund embezzlement",
+   "desc": "통장에서 돈이 사라진다",
+   "ex": "",
+   "visual": "a banking app screen showing a lower balance than expected, a bead of sweat",
+   "sfx": "phone notification, gulp",
+   "tier": "Y",
+   "triggers": [
+    "회비 정산 안 맞음",
+    "총무 말 돌림",
+    "'잘못 이체했나봐'"
+   ],
+   "safe_twist": "사라진 3만 원의 행방을 쫓는 코믹 미스터리, 결말은 실수·깜짝 선물"
+  },
+  {
+   "id": "shareholder_meeting",
+   "cat": "돈·재벌",
+   "ko": "주주총회 반전 등장",
+   "en": "Shareholder meeting reversal",
+   "desc": "문이 열리고 지분을 매집한 주인공이 등장",
+   "ex": "",
+   "visual": "double doors burst open in a boardroom, she walks in with a folder, everyone stands",
+   "sfx": "doors bang, gasps",
+   "tier": "G",
+   "triggers": [
+    "투표·다수결",
+    "방장 교체",
+    "모임 장소 결정 역전"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "stake_buyout",
+   "cat": "돈·재벌",
+   "ko": "지분 몰래 매집",
+   "en": "Secret stake buyout",
+   "desc": "원수 회사 주식을 조용히 사들인다",
+   "ex": "너는 내 운명",
+   "visual": "stock chart turning red-to-blue on a monitor reflected in sunglasses",
+   "sfx": "keyboard clacks",
+   "tier": "G",
+   "triggers": [
+    "주식·코인 얘기",
+    "파란불 손절"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "nouveau_riche",
+   "cat": "돈·재벌",
+   "ko": "졸부의 플렉스",
+   "en": "Nouveau riche flex",
+   "desc": "갑자기 명품 시계·차를 자랑",
+   "ex": "아내의 유혹",
+   "visual": "a gold wristwatch glinting under neon, deliberately shown off",
+   "sfx": "sparkle chime",
+   "tier": "G",
+   "triggers": [
+    "비싼 물건 사진",
+    "'중고로 샀음'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "loan_shark",
+   "cat": "돈·재벌",
+   "ko": "사채업자 들이닥침",
+   "en": "Loan sharks barge in",
+   "desc": "빨간 딱지와 문 두드리는 사채업자",
+   "ex": "",
+   "visual": "red seizure stickers slapped on furniture, men in black jackets at the door",
+   "sfx": "door pounding",
+   "tier": "Y",
+   "triggers": [
+    "돈 빌려달라",
+    "갚을게"
+   ],
+   "safe_twist": "빌린 치킨 기프티콘을 받으러 온 '기프티콘 추심원'"
+  },
+  {
+   "id": "affair",
+   "cat": "사랑·결혼",
+   "ko": "불륜",
+   "en": "Affair",
+   "desc": "막장 서사의 출발점(86%)",
+   "ex": "조강지처클럽, 아내의 유혹",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "'몰래 둘이서만 맛집 감' — 단톡 몰래 2인 모임(배신의 밀회)으로"
+  },
+  {
+   "id": "secret_meeting_witness",
+   "cat": "사랑·결혼",
+   "ko": "비밀 밀회 목격",
+   "en": "Secret rendezvous witnessed",
+   "desc": "기둥 뒤에서 둘이 만나는 걸 본다, 손에 든 걸 떨어뜨린다",
+   "ex": "",
+   "visual": "rainy night, two people whispering under a station canopy, a third person peeks from behind a pillar and drops a box",
+   "sfx": "rain, thud of dropped box",
+   "tier": "G",
+   "triggers": [
+    "'어제 OO역에서 너네 본 거 같은데'",
+    "둘만 아는 얘기",
+    "동시에 연차"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "wedding_objection",
+   "cat": "사랑·결혼",
+   "ko": "결혼식장 난입 '이 결혼 반대합니다'",
+   "en": "Wedding crash objection",
+   "desc": "식장 문이 열리고 누군가 외친다",
+   "ex": "",
+   "visual": "church doors fly open mid-ceremony, a woman in white shouts, guests turn in shock",
+   "sfx": "doors slam, organ stops",
+   "tier": "G",
+   "triggers": [
+    "약속·여행 취소 폭탄",
+    "'할 말 있어'",
+    "공지 직전 반대"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "engagement_meeting_enemy",
+   "cat": "사랑·결혼",
+   "ko": "상견례에서 원수 집안 확인",
+   "en": "Families revealed as enemies at the engagement meeting",
+   "desc": "상견례 자리에서 서로 알아보고 얼어붙는다",
+   "ex": "",
+   "visual": "two families at a hanjeongsik table, both mothers drop their spoons at once",
+   "sfx": "spoons clatter",
+   "tier": "G",
+   "triggers": [
+    "소개팅·중매",
+    "'그 집 애가 너 맘에 들어했대'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "contract_marriage",
+   "cat": "사랑·결혼",
+   "ko": "계약 결혼·위장 연애",
+   "en": "Contract marriage / fake dating",
+   "desc": "조건을 걸고 연인인 척",
+   "ex": "",
+   "visual": "two people signing a contract titled 연애 계약서 across a desk",
+   "sfx": "pen scratch, stamp",
+   "tier": "G",
+   "triggers": [
+    "소개팅 회피",
+    "'남친 있는 척 해줘'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "love_triangle",
+   "cat": "사랑·결혼",
+   "ko": "삼각관계·서브남주",
+   "en": "Love triangle with second lead",
+   "desc": "착하고 돈 많은 연하 서브남주 등장",
+   "ex": "아내의 유혹",
+   "visual": "a woman between two men in the rain, one holding an umbrella over her",
+   "sfx": "rain",
+   "tier": "Y",
+   "triggers": [
+    "둘이 같은 사람 좋아함 농담"
+   ],
+   "safe_twist": "마지막 치킨 다리를 사이에 둔 삼각관계"
+  },
+  {
+   "id": "marriage_registration_torn",
+   "cat": "사랑·결혼",
+   "ko": "혼인신고서 찢기",
+   "en": "Tearing the marriage registration",
+   "desc": "시어머니가 몰래 서류를 찢는다",
+   "ex": "너는 내 운명",
+   "visual": "an official form ripped in half in slow tear, pieces falling",
+   "sfx": "paper tear",
+   "tier": "G",
+   "triggers": [
+    "신청서·예약 취소",
+    "공동 예약 날아감"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "forced_cohabitation",
+   "cat": "사랑·결혼",
+   "ko": "강제 동거",
+   "en": "Forced cohabitation",
+   "desc": "사정상 원수와 한집살이",
+   "ex": "",
+   "visual": "two people standing in one small rooftop room with two suitcases",
+   "sfx": "awkward silence",
+   "tier": "G",
+   "triggers": [
+    "여행 숙소 방 배정",
+    "룸메이트"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "first_love_return",
+   "cat": "사랑·결혼",
+   "ko": "첫사랑의 귀환",
+   "en": "First love returns",
+   "desc": "어린 시절 헤어진 첫사랑이 성인이 되어 재회",
+   "ex": "가을동화",
+   "visual": "two adults pass on a crosswalk, both stop and turn around",
+   "sfx": "heartbeat, piano note",
+   "tier": "G",
+   "triggers": [
+    "옛날 얘기·동창",
+    "'우리 초딩 때'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "revenge_transformation",
+   "cat": "복수",
+   "ko": "점 하나 찍고 돌아온 복수의 화신",
+   "en": "Return as a new person for revenge",
+   "desc": "착하던 주인공이 몰라보게 변신해 복수하러 돌아온다",
+   "ex": "아내의 유혹(민소희)",
+   "visual": "slow walk toward camera in sunglasses and red lipstick, a small beauty mark under the eye",
+   "sfx": "heels, bass drop",
+   "tier": "G",
+   "triggers": [
+    "방 나갔다 재입장",
+    "잠수 후 복귀",
+    "프사 확 바뀜"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "revenge_vow",
+   "cat": "복수",
+   "ko": "복수 맹세 '살 거야, 살아서 갚아줄 거야'",
+   "en": "Revenge vow",
+   "desc": "바닥에서 일어서며 이를 간다",
+   "ex": "아내의 유혹 '구정물 퍼먹고라도 살 거야'",
+   "visual": "on a windy bridge at night, she grips the railing and turns back, eyes burning",
+   "sfx": "wind, rising strings",
+   "tier": "G",
+   "triggers": [
+    "생일 까먹힘",
+    "서운함 표현 후 말수 감소",
+    "'괜찮아 ㅎㅎ'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "villainess",
+   "cat": "인물",
+   "ko": "국민 악녀",
+   "en": "National villainess",
+   "desc": "목적을 위해 수단을 가리지 않는 악녀(연민정·신애리)",
+   "ex": "왔다! 장보리(연민정), 아내의 유혹(신애리)",
+   "visual": "a woman smiles sweetly to others, then her smile drops instantly when they turn away",
+   "sfx": "music cuts",
+   "tier": "Y",
+   "triggers": [
+    "앞뒤 다른 말",
+    "'착한 척'"
+   ],
+   "safe_twist": "악녀 '연기'를 즐기는 캐릭터로, 실제 악행 없음"
+  },
+  {
+   "id": "naive_heroine",
+   "cat": "인물",
+   "ko": "참고 또 참는 여주(캔디)",
+   "en": "Long-suffering heroine",
+   "desc": "가난·착함·재능·마지막 악다구니",
+   "ex": "왔다! 장보리",
+   "visual": "she scrubs a floor while others laugh, then looks up with quiet resolve",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "늘 양보",
+    "늦게까지 일함",
+    "'괜찮아~'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "shameless_husband",
+   "cat": "인물",
+   "ko": "뻔뻔한 남편형",
+   "en": "Shameless cheat",
+   "desc": "들켜도 당당, 막말 장인",
+   "ex": "조강지처클럽(한원수)",
+   "visual": "",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [
+    "잘못하고도 당당"
+   ],
+   "safe_twist": "치킨 다리 먹고도 당당한 '뻔뻔형 용의자'"
+  },
+  {
+   "id": "devoted_second_lead",
+   "cat": "인물",
+   "ko": "순정남(끝까지 지키는 남자)",
+   "en": "Devoted protector",
+   "desc": "여주를 끝까지 지키는 연하 재벌",
+   "ex": "너는 내 운명(강호세)",
+   "visual": "he steps in front of her and takes the water splash himself",
+   "sfx": "splash",
+   "tier": "G",
+   "triggers": [
+    "늘 편들어주는 친구"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "meddling_grandma",
+   "cat": "인물",
+   "ko": "변덕스러운 시할머니·얄미운 시누이",
+   "en": "Meddling grandma / sister-in-law",
+   "desc": "괴롭히다 마음 바뀌다 다시 등 돌림",
+   "ex": "인어아가씨, 너는 내 운명",
+   "visual": "an old woman crossing her arms, then sneakily handing over a snack",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "이모·할머니 단톡 참전",
+    "오지랖"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "matchmaker_aunt",
+   "cat": "인물",
+   "ko": "중매 집착 이모",
+   "en": "Matchmaking aunt",
+   "desc": "'그 집이 강남에 건물이 있어~'",
+   "ex": "",
+   "visual": "an aunt slides a photo of a man in a suit across the table, eyebrows raised",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "소개팅 주선",
+    "'좋은 자리'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "stern_chairman",
+   "cat": "인물",
+   "ko": "회장님 쓰러짐 '회장님!'",
+   "en": "Chairman collapses",
+   "desc": "충격 소식에 뒷목 잡고 쓰러진다",
+   "ex": "",
+   "visual": "an old chairman clutches the back of his neck and collapses into a leather chair, secretaries rush in",
+   "sfx": "gasp, chair creak",
+   "tier": "G",
+   "triggers": [
+    "충격 발표",
+    "폭탄 공지",
+    "'가족회의 하자'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "neck_grab",
+   "cat": "연출",
+   "ko": "뒷목 잡기",
+   "en": "Grabbing the back of the neck",
+   "desc": "분노·충격의 국룰 리액션",
+   "ex": "",
+   "visual": "a parent grabs the back of their neck and staggers",
+   "sfx": "comic boing",
+   "tier": "G",
+   "triggers": [
+    "어이없는 소식",
+    "읽씹 후 폭탄 발언"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "water_splash",
+   "cat": "연출",
+   "ko": "물벼락",
+   "en": "Water to the face",
+   "desc": "컵의 물을 얼굴에 끼얹는다",
+   "ex": "너는 내 운명",
+   "visual": "a glass of water thrown, splash frozen mid-air, the victim blinks in disbelief",
+   "sfx": "splash, sting",
+   "tier": "G",
+   "triggers": [
+    "말다툼",
+    "모욕적 발언 인용"
+   ],
+   "safe_twist": "",
+   "verified": "Omni 생성 통과 (tests/out/vid/v1)"
+  },
+  {
+   "id": "kimchi_slap",
+   "cat": "연출",
+   "ko": "김치 싸대기",
+   "en": "Kimchi slap",
+   "desc": "김치 한 포기로 뺨을 친다",
+   "ex": "모두 다 김치",
+   "visual": "she grabs a whole cabbage kimchi and slaps his cheek, juice splashes, triple zoom-in on his shocked face",
+   "sfx": "wet slap, orchestral hit",
+   "tier": "G",
+   "triggers": [
+    "음식 관련 원한",
+    "최고 클라이맥스"
+   ],
+   "safe_twist": "",
+   "verified": "Omni 생성 통과 (tests/out/vid/v4)"
+  },
+  {
+   "id": "doenjang_rub",
+   "cat": "연출",
+   "ko": "된장 문지르기",
+   "en": "Soybean paste smear",
+   "desc": "얼굴에 된장을",
+   "ex": "해피시스터즈",
+   "visual": "",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [],
+   "safe_twist": "된장찌개 냄비 뚜껑으로 '쾅' 위협까지만"
+  },
+  {
+   "id": "pasta_slap",
+   "cat": "연출",
+   "ko": "파스타 따귀",
+   "en": "Pasta slap",
+   "desc": "파스타를 얼굴에 던진다",
+   "ex": "이브의 사랑",
+   "visual": "spaghetti flung across a restaurant table, noodles hang from his hair",
+   "sfx": "wet splat",
+   "tier": "G",
+   "triggers": [
+    "양식 레스토랑 모임",
+    "'파스타 먹자'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "juice_spit",
+   "cat": "연출",
+   "ko": "오렌지주스 뿜기",
+   "en": "Juice spit-take",
+   "desc": "충격적인 말에 마시던 걸 뿜는다",
+   "ex": "사랑했나봐",
+   "visual": "he spits orange juice in a perfect arc upon hearing shocking news",
+   "sfx": "spray, comic sting",
+   "tier": "G",
+   "triggers": [
+    "폭탄 발언 직후 반응",
+    "'??????'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "cake_face",
+   "cat": "연출",
+   "ko": "케이크 얼굴 투척",
+   "en": "Cake to the face",
+   "desc": "생일 케이크가 얼굴로",
+   "ex": "",
+   "visual": "a birthday cake shoved into a face, candles still lit",
+   "sfx": "squish",
+   "tier": "G",
+   "triggers": [
+    "생일 사건",
+    "까먹은 생일"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "hair_pull",
+   "cat": "연출",
+   "ko": "머리채 잡기",
+   "en": "Hair-pulling fight",
+   "desc": "머리채 잡고 싸운다",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [],
+   "safe_twist": "서로 가발을 벗겨 내려는 코믹 실랑이, 또는 베개 싸움"
+  },
+  {
+   "id": "triple_zoom",
+   "cat": "연출",
+   "ko": "막장 3연속 줌인",
+   "en": "Triple dramatic zoom-in",
+   "desc": "충격받은 얼굴에 줌·줌·줌 + 두둥",
+   "ex": "",
+   "visual": "dramatic triple zoom-in on a shocked face",
+   "sfx": "three bass hits, '두둥'",
+   "tier": "G",
+   "triggers": [
+    "클라이맥스 1회"
+   ],
+   "safe_twist": "",
+   "verified": "Omni 생성 통과 (v4)",
+   "rule": "한 화에 한 번만"
+  },
+  {
+   "id": "thunder_reveal",
+   "cat": "연출",
+   "ko": "천둥번개와 함께 폭로",
+   "en": "Reveal with thunder",
+   "desc": "진실을 말하는 순간 번개",
+   "ex": "",
+   "visual": "lightning flash illuminates her face mid-sentence",
+   "sfx": "thunder",
+   "tier": "G",
+   "triggers": [
+    "진실 고백"
+   ],
+   "safe_twist": "",
+   "rule": "한 화에 한 번만"
+  },
+  {
+   "id": "eavesdrop_tray",
+   "cat": "연출",
+   "ko": "엿듣다 쟁반 떨어뜨림",
+   "en": "Eavesdropping, drops the tray",
+   "desc": "문 밖에서 엿듣다 쟁반·컵을 떨어뜨려 들킨다",
+   "ex": "",
+   "visual": "a woman behind a half-open door, a tray of teacups slips from her hands and shatters",
+   "sfx": "crash of china",
+   "tier": "G",
+   "triggers": [
+    "'나 다 봤다'",
+    "읽음 표시만 있고 답 없음",
+    "캡처 유출"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "glass_drop",
+   "cat": "연출",
+   "ko": "충격에 컵 떨어뜨림",
+   "en": "Glass drop in shock",
+   "desc": "슬로모션으로 깨지는 컵",
+   "ex": "",
+   "visual": "a wine glass slips and shatters on marble",
+   "sfx": "glass shatter",
+   "tier": "G",
+   "triggers": [
+    "충격 소식"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "knees_in_rain",
+   "cat": "연출",
+   "ko": "빗속에 무릎 꿇기",
+   "en": "Kneeling in the rain",
+   "desc": "대문 앞 빗속에서 무릎 꿇고 빈다",
+   "ex": "",
+   "visual": "a man kneels before a mansion gate in pouring rain, soaked",
+   "sfx": "heavy rain",
+   "tier": "G",
+   "triggers": [
+    "사과 요구",
+    "'잘못했어'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "rain_chase_bus",
+   "cat": "연출",
+   "ko": "떠나는 버스·차 뒤쫓아 달리기",
+   "en": "Running after the departing car",
+   "desc": "손 흔들며 차를 쫓는다",
+   "ex": "",
+   "visual": "she runs after a departing bus waving her arm, it doesn't stop",
+   "sfx": "engine fading, panting",
+   "tier": "G",
+   "triggers": [
+    "약속 펑크",
+    "먼저 떠남"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "airport_chase",
+   "cat": "연출",
+   "ko": "공항 추격",
+   "en": "Airport chase",
+   "desc": "출국 직전 공항으로 달려간다",
+   "ex": "",
+   "visual": "running through an airport terminal past departure boards",
+   "sfx": "boarding announcement",
+   "tier": "G",
+   "triggers": [
+    "이민·유학·이직",
+    "'나 다음 달 말까지야'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "slow_motion_walk",
+   "cat": "연출",
+   "ko": "슬로모션 등장 워킹",
+   "en": "Slow-motion entrance",
+   "desc": "바람에 머리 날리며 걸어온다",
+   "ex": "",
+   "visual": "slow-motion walk toward camera, wind in hair, everyone turns",
+   "sfx": "bass drop",
+   "tier": "G",
+   "triggers": [
+    "복귀·변신"
+   ],
+   "safe_twist": "",
+   "rule": "티키 규칙: 슬로모션은 등장 1회만"
+  },
+  {
+   "id": "cliffhanger_freeze",
+   "cat": "연출",
+   "ko": "충격 엔딩(다음 회에 계속)",
+   "en": "Shock cliffhanger",
+   "desc": "가장 결정적인 순간에 끝",
+   "ex": "",
+   "visual": "an extreme close-up on wide eyes, cut to black",
+   "sfx": "sting then silence",
+   "tier": "G",
+   "triggers": [
+    "'할 말 있어'로 끝난 대화",
+    "미해결 떡밥"
+   ],
+   "safe_twist": "",
+   "rule": "티키 규칙: 프리즈 프레임 대신 검은 화면 컷"
+  },
+  {
+   "id": "flashback",
+   "cat": "연출",
+   "ko": "회상 플래시백",
+   "en": "Flashback",
+   "desc": "뿌옇게 바랜 과거 장면",
+   "ex": "",
+   "visual": "soft overexposed flashback of college days, film grain",
+   "sfx": "reverb chime",
+   "tier": "G",
+   "triggers": [
+    "옛날 사진 공유",
+    "'우리 신입생 때'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "rooftop",
+   "cat": "장소",
+   "ko": "옥상 대면",
+   "en": "Rooftop confrontation",
+   "desc": "회사·병원 옥상에서 담판",
+   "ex": "",
+   "visual": "two people on a windy rooftop at night, city lights behind",
+   "sfx": "wind",
+   "tier": "G",
+   "triggers": [
+    "1:1 대화 요구",
+    "'잠깐 얘기 좀'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "hospital_vip",
+   "cat": "장소",
+   "ko": "VIP 병실",
+   "en": "VIP hospital room",
+   "desc": "가습기와 꽃바구니, 링거 뽑고 나가기",
+   "ex": "",
+   "visual": "a luxury hospital room, a humidifier puffing mist, she rips out her IV and stands",
+   "sfx": "monitor beep",
+   "tier": "Y",
+   "triggers": [
+    "아프다·병원 감"
+   ],
+   "safe_twist": "장염 정도의 가벼운 병, 링거 뽑고 치킨 먹으러 탈출"
+  },
+  {
+   "id": "mansion_stairs",
+   "cat": "장소",
+   "ko": "대저택 계단 위 내려다보기",
+   "en": "Mansion staircase stare-down",
+   "desc": "계단 위에서 사모님이 내려다본다",
+   "ex": "",
+   "visual": "a woman at the top of a grand staircase looks down at a guest in the foyer",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "처음 집 초대"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "chaebol_dinner",
+   "cat": "장소",
+   "ko": "재벌가 가족 식사 자리",
+   "en": "Chaebol family dinner",
+   "desc": "긴 식탁, 무거운 침묵, 폭탄 발언",
+   "ex": "",
+   "visual": "a very long dining table, silverware clinks, the patriarch sets down his spoon",
+   "sfx": "silverware clink",
+   "tier": "G",
+   "triggers": [
+    "가족회의",
+    "명절 모임"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "pojangmacha",
+   "cat": "장소",
+   "ko": "포장마차 소주 한잔 고백",
+   "en": "Street tent soju confession",
+   "desc": "취해서 속마음을 털어놓는다",
+   "ex": "",
+   "visual": "orange tent light, green soju bottles, a drunk confession",
+   "sfx": "street noise",
+   "tier": "G",
+   "triggers": [
+    "새벽 술 메시지",
+    "만취 고백 후 '잊어줘'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "hangang_bridge",
+   "cat": "장소",
+   "ko": "한강 다리 위 결심",
+   "en": "Han River bridge resolve",
+   "desc": "",
+   "ex": "아내의 유혹",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "한강 공원 편의점 라면 앞에서 결심(자해 암시 장면 금지)"
+  },
+  {
+   "id": "amnesia",
+   "cat": "몸·사고",
+   "ko": "기억상실",
+   "en": "Amnesia",
+   "desc": "일일극 71%. 사고 후 기억을 잃는다",
+   "ex": "루비반지, 겨울연가",
+   "visual": "she opens her eyes in a hospital bed and asks '누구세요?'",
+   "sfx": "monitor beep",
+   "tier": "Y",
+   "triggers": [
+    "'어제 말 잊어줘'",
+    "'기억 안 나는데?'"
+   ],
+   "safe_twist": "선택적 기억상실 — 회비 얘기만 기억 못 함"
+  },
+  {
+   "id": "car_accident",
+   "cat": "몸·사고",
+   "ko": "트럭 교통사고",
+   "en": "Truck accident",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "배달 오토바이가 치킨을 놓고 감(충격 효과음만)"
+  },
+  {
+   "id": "terminal_illness",
+   "cat": "몸·사고",
+   "ko": "불치병·시한부",
+   "en": "Terminal illness",
+   "desc": "일일극 43%",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "'월급날까지 시한부' — 통장 잔고 시한부"
+  },
+  {
+   "id": "bone_marrow",
+   "cat": "몸·사고",
+   "ko": "골수 기증 거부",
+   "en": "Refusing bone marrow",
+   "desc": "'걔 피가 내 몸에 들어오는 거 싫어'",
+   "ex": "너는 내 운명",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "남이 준 반찬 거부 '걔가 만든 건 안 먹어'"
+  },
+  {
+   "id": "plastic_surgery_identity",
+   "cat": "몸·사고",
+   "ko": "성형·얼굴 바뀜으로 다른 사람 행세",
+   "en": "Face change identity swap",
+   "desc": "쌍둥이 얼굴이 뒤바뀐다",
+   "ex": "루비반지",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "프사·닉네임을 바꿔 다른 사람 행세(부캐)"
+  },
+  {
+   "id": "twin_swap",
+   "cat": "몸·사고",
+   "ko": "쌍둥이 바꿔치기",
+   "en": "Twin swap",
+   "desc": "쌍둥이가 서로 행세",
+   "ex": "루비반지",
+   "visual": "two identical women in different outfits face each other in a mirror-like composition",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "닮은 두 사람",
+    "부계정"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "out_of_body",
+   "cat": "몸·사고",
+   "ko": "유체이탈",
+   "en": "Out-of-body experience",
+   "desc": "영혼이 빠져나와 상황을 본다",
+   "ex": "오로라 공주",
+   "visual": "a translucent double of a man rises from his body, looks down in confusion",
+   "sfx": "ethereal whoosh",
+   "tier": "G",
+   "triggers": [
+    "넋 나감",
+    "'영혼 탈출'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "psych_ward",
+   "cat": "몸·사고",
+   "ko": "정신병원 감금",
+   "en": "Locked in an asylum",
+   "desc": "",
+   "ex": "백년의 유산",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "단톡방 강제 퇴장 후 '초대 대기실'에 갇힘"
+  },
+  {
+   "id": "miscarriage_stairs",
+   "cat": "몸·사고",
+   "ko": "계단 굴러 유산",
+   "en": "Stair fall miscarriage",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "계단에서 치킨 상자를 떨어뜨림"
+  },
+  {
+   "id": "kidnap_warehouse",
+   "cat": "몸·사고",
+   "ko": "창고 납치",
+   "en": "Warehouse kidnapping",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "생일 서프라이즈를 위한 '납치' — 눈 가리고 데려가 보니 파티"
+  },
+  {
+   "id": "surrogate_swap",
+   "cat": "몸·사고",
+   "ko": "대리모·난자 바꿔치기",
+   "en": "Surrogate egg swap",
+   "desc": "",
+   "ex": "뻐꾸기 둥지",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "주문한 음식 바꿔치기"
+  },
+  {
+   "id": "murder_plot",
+   "cat": "복수",
+   "ko": "살인 청부",
+   "en": "Murder plot",
+   "desc": "일일극 86%",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "'민초 테러' 청부 — 몰래 민트초코 먹이기"
+  },
+  {
+   "id": "brake_cut",
+   "cat": "복수",
+   "ko": "브레이크 고장",
+   "en": "Cut brakes",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "킥보드 배터리 몰래 방전"
+  },
+  {
+   "id": "evidence_usb",
+   "cat": "복수",
+   "ko": "결정적 증거 USB·녹음기",
+   "en": "Evidence USB / recorder",
+   "desc": "'이게 뭔지 알아?' 녹음 파일 재생",
+   "ex": "",
+   "visual": "she holds up a small voice recorder, presses play, his face drains of color",
+   "sfx": "click, playback hiss",
+   "tier": "G",
+   "triggers": [
+    "캡처·스크린샷",
+    "'증거 있음'",
+    "'나 다 저장해놨어'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "screenshot_evidence",
+   "cat": "복수",
+   "ko": "캡처 폭로",
+   "en": "Screenshot exposure",
+   "desc": "단톡 캡처가 증거로 펼쳐진다",
+   "ex": "",
+   "visual": "a giant phone screenshot projected on a wall during a family meeting",
+   "sfx": "projector click, gasps",
+   "tier": "G",
+   "triggers": [
+    "삭제된 메시지",
+    "'캡처해놨다'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "masquerade",
+   "cat": "복수",
+   "ko": "가면파티 잠입",
+   "en": "Masquerade infiltration",
+   "desc": "가면을 쓰고 원수 파티에 잠입",
+   "ex": "",
+   "visual": "masked guests in a ballroom, she lifts her mask slightly to reveal her eyes",
+   "sfx": "waltz muffled",
+   "tier": "G",
+   "triggers": [
+    "모임 몰래 참석",
+    "부계정"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "fall_survival",
+   "cat": "몸·사고",
+   "ko": "추락했는데 살아 돌아옴",
+   "en": "Survives a fall and returns",
+   "desc": "",
+   "ex": "펜트하우스",
+   "visual": "",
+   "sfx": "",
+   "tier": "R",
+   "triggers": [],
+   "safe_twist": "'단톡방에서 추방됐다 살아 돌아온' 귀환자"
+  },
+  {
+   "id": "death_note_writer",
+   "cat": "메타",
+   "ko": "작가의 데스노트(인물 줄줄이 하차)",
+   "en": "Writer's death note",
+   "desc": "인물이 황당한 이유로 차례로 하차",
+   "ex": "오로라 공주",
+   "visual": "",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [
+    "멤버 연속 퇴장"
+   ],
+   "safe_twist": "'단톡방 데스노트' — 알림 끄기로 차례로 잠수"
+  },
+  {
+   "id": "absurd_line",
+   "cat": "메타",
+   "ko": "맥락 없는 명대사",
+   "en": "Absurd quotable line",
+   "desc": "'암세포도 생명이니 함께 살아보려고요'",
+   "ex": "오로라 공주",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "단톡 명언·어록"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "pinky_promise",
+   "cat": "사랑·결혼",
+   "ko": "새끼손가락 약속·도장",
+   "en": "Pinky swear",
+   "desc": "",
+   "ex": "",
+   "visual": "two pinkies hooked, thumbs pressed together",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "'약속해'",
+    "'이번엔 진짜'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "piggyback",
+   "cat": "사랑·결혼",
+   "ko": "취해서 업어주기",
+   "en": "Drunk piggyback",
+   "desc": "",
+   "ex": "",
+   "visual": "he carries a drunk woman on his back down a quiet night street",
+   "sfx": "footsteps",
+   "tier": "G",
+   "triggers": [
+    "술자리 후기"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "umbrella",
+   "cat": "사랑·결혼",
+   "ko": "우산 씌워주기",
+   "en": "Umbrella sharing",
+   "desc": "",
+   "ex": "",
+   "visual": "one umbrella, his shoulder soaked",
+   "sfx": "rain",
+   "tier": "G",
+   "triggers": [
+    "비 오는 날 얘기"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "wrist_grab",
+   "cat": "사랑·결혼",
+   "ko": "손목 잡고 끌고 가기",
+   "en": "Wrist grab drag-away",
+   "desc": "'따라와'",
+   "ex": "",
+   "visual": "he grabs her wrist and pulls her out of a party",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [
+    "둘만 빠짐"
+   ],
+   "safe_twist": "티키 규칙: 동기 없는 손목 잡기 금지 — 이유가 있을 때만"
+  },
+  {
+   "id": "gift_return",
+   "cat": "사랑·결혼",
+   "ko": "선물 돌려주기",
+   "en": "Returning the gift",
+   "desc": "받은 목걸이를 돌려준다",
+   "ex": "",
+   "visual": "a necklace placed back into his palm",
+   "sfx": "chain jingle",
+   "tier": "G",
+   "triggers": [
+    "기프티콘 환불",
+    "선물 다툼"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "office_slap_resign",
+   "cat": "돈·재벌",
+   "ko": "사표 던지기",
+   "en": "Throwing the resignation letter",
+   "desc": "'그만두겠습니다'",
+   "ex": "",
+   "visual": "an envelope marked 사직서 slapped onto a desk",
+   "sfx": "slap of paper",
+   "tier": "G",
+   "triggers": [
+    "퇴사·이직 소식"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "youngest_promotion",
+   "cat": "돈·재벌",
+   "ko": "최연소 파격 승진",
+   "en": "Youngest-ever promotion",
+   "desc": "",
+   "ex": "",
+   "visual": "an announcement board with her name at the top, colleagues stunned",
+   "sfx": "murmur",
+   "tier": "G",
+   "triggers": [
+    "승진·조직개편"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "rival_company_ceo",
+   "cat": "돈·재벌",
+   "ko": "알고 보니 경쟁사 대표와 연결",
+   "en": "Secretly tied to rival CEO",
+   "desc": "",
+   "ex": "",
+   "visual": "a photo of two men at a university graduation, circled in red",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "'그 회사 대표가 OO 동기래'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "photo_on_wall",
+   "cat": "소품",
+   "ko": "거실의 거대한 가족사진",
+   "en": "Huge family portrait",
+   "desc": "",
+   "ex": "",
+   "visual": "a giant framed family portrait above the sofa, one face is missing",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "단체사진",
+    "누가 빠진 사진"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "old_photo_album",
+   "cat": "소품",
+   "ko": "앨범 속 빠진 사진",
+   "en": "The missing photo in the album",
+   "desc": "그 날 사진만 없다",
+   "ex": "",
+   "visual": "an old album page with one empty rectangle where a photo was",
+   "sfx": "page turn",
+   "tier": "G",
+   "triggers": [
+    "'돌사진이 없네'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "locket_necklace",
+   "cat": "소품",
+   "ko": "징표 목걸이·반쪽 펜던트",
+   "en": "Token necklace",
+   "desc": "어릴 때 나눈 반쪽 목걸이로 정체 확인",
+   "ex": "",
+   "visual": "two half-heart pendants fitting together",
+   "sfx": "click",
+   "tier": "G",
+   "triggers": [
+    "커플템·우정반지"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "diary",
+   "cat": "소품",
+   "ko": "몰래 본 일기장",
+   "en": "Secret diary",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "메모장·인스타 부계"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "bankbook",
+   "cat": "소품",
+   "ko": "통장·잔고 화면",
+   "en": "Bankbook balance",
+   "desc": "",
+   "ex": "",
+   "visual": "a bank app showing 120,000원 instead of 150,000원",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "회비"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "luxury_watch",
+   "cat": "소품",
+   "ko": "명품 시계",
+   "en": "Luxury watch",
+   "desc": "",
+   "ex": "",
+   "visual": "gold watch glinting",
+   "sfx": "sparkle",
+   "tier": "G",
+   "triggers": [
+    "비싼 물건"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "last_chicken_leg",
+   "cat": "소품",
+   "ko": "마지막 치킨 다리",
+   "en": "The last chicken drumstick",
+   "desc": "(Makjang 신규) 음식 원한의 상징",
+   "ex": "",
+   "visual": "a single glazed drumstick on a plate under a spotlight",
+   "sfx": "heavenly choir",
+   "tier": "G",
+   "triggers": [
+    "음식 도난 논쟁"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_shameless",
+   "cat": "대사",
+   "ko": "'너 같이 근본도 없는 게'",
+   "en": "'Someone with no roots like you'",
+   "desc": "재벌 사모님 국룰 대사",
+   "ex": "너는 내 운명",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "무시당한 경험"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_how_dare",
+   "cat": "대사",
+   "ko": "'감히 네가?'",
+   "en": "'How dare you?'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "하극상",
+    "막내의 반란"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_leave_my_son",
+   "cat": "대사",
+   "ko": "'우리 아들한테서 떨어져'",
+   "en": "'Stay away from my son'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "엄마의 연애 간섭"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_who_are_you",
+   "cat": "대사",
+   "ko": "'누구세요?'",
+   "en": "'Who are you?'",
+   "desc": "기억상실 국룰",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "'어제 말 잊어줘'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_live_to_revenge",
+   "cat": "대사",
+   "ko": "'살 거야, 살아서 다 갚아줄 거야'",
+   "en": "'I'll live and pay you back'",
+   "desc": "",
+   "ex": "아내의 유혹",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "서운함 폭발"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_ill_ruin_you",
+   "cat": "대사",
+   "ko": "'내가 가만 안 둬'",
+   "en": "'I won't let this go'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "분노 인용"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_did_you_know",
+   "cat": "대사",
+   "ko": "'너… 알고 있었어?'",
+   "en": "'You… knew?'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "비밀 공유 정황"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_its_not_what_you_think",
+   "cat": "대사",
+   "ko": "'그런 거 아니야, 내 말 좀 들어봐'",
+   "en": "'It's not what you think'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "해명 메시지"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_get_out",
+   "cat": "대사",
+   "ko": "'당장 나가!'",
+   "en": "'Get out!'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "방 나가기"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_this_money",
+   "cat": "대사",
+   "ko": "'이 돈 받고 조용히 사라져'",
+   "en": "'Take this money and disappear'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "송금 내역"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_family_meeting",
+   "cat": "대사",
+   "ko": "'다 모여, 할 말 있다'",
+   "en": "'Everyone gather, I have something to say'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "'가족회의 하자'",
+    "'할 말 있어'"
+   ],
+   "safe_twist": ""
+  },
+  {
+   "id": "line_cancer_cells",
+   "cat": "대사",
+   "ko": "'○○도 생명이니 함께 살아보려고요'",
+   "en": "Absurd philosophical line",
+   "desc": "오로라 공주 패러디 틀",
+   "ex": "오로라 공주",
+   "visual": "",
+   "sfx": "",
+   "tier": "Y",
+   "triggers": [
+    "황당한 합리화"
+   ],
+   "safe_twist": "'뱃살도 생명이니 함께 살아보려고요'"
+  },
+  {
+   "id": "line_saved_country",
+   "cat": "대사",
+   "ko": "'전생에 나라를 구했나 봐'",
+   "en": "'You must have saved the country in a past life'",
+   "desc": "",
+   "ex": "",
+   "visual": "",
+   "sfx": "",
+   "tier": "G",
+   "triggers": [
+    "운 좋은 일"
+   ],
+   "safe_twist": ""
+  }
+ ]
+}
