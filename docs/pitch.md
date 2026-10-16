@@ -4,6 +4,16 @@
 - **One-liner:** 막장톡 (MAKJANG TALK) — your group chat, remade as a K-drama. Every twist comes with a receipt.
 - **50 words:** Upload a KakaoTalk or WhatsApp group chat. Gemini 4 Argon reads all of it, finds the hidden storylines, and directs a 40-second K-drama trailer starring your friends — modern makjang or romance-fantasy. Every twist is pinned to the real message behind it, and three verification loops check the script, the faces, and the spoken lines.
 
+## 제출 폼 (cerebralvalley.ai/e/google-deepmind-ai-hackathon → Submit Project, 15:20 마감 엄수)
+| 칸 | 넣을 것 |
+|---|---|
+| Team Name * | 막장톡 (MAKJANG TALK) |
+| Team Members | Honam Kang (자동, 개인전) |
+| Project Description + Google Cloud Link * | 아래 1장 Description 전체 + 맨 위에 `Live (Google Cloud Run): https://makjang-3116986546.asia-northeast3.run.app · passcode: makjang` |
+| Public GitHub Repository * | https://github.com/h5nam/makjang |
+| Demo Video * | YouTube 일부 공개 링크 (≤2분) |
+- 발표 자료(슬라이드) 제출 칸은 없음. Top 4만 16:00 이벤트홀에서 라이브 5분 발표. 15:50까지 이벤트홀 착석.
+
 ## 1. Project Description (제출용, 그대로 붙여넣기)
 
 **막장톡 (MAKJANG TALK) — your group chat, remade as a K-drama.**
