@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #0B0B0C;
+  --ink-2: #141414;
+  --ink-3: #1F1F22;
+  --border-ink: #2A2A2E;
+  --gold: #D4B26A;
+  --gold-dim: #8C7647;
+  --crimson: #C8102E;
+  --paper: #F6F3EA;
+  --kakao: #FEE500;
+  --kakao-fg: #191919;
+  --bubble: #FFFFFF;
+  --chat-bg: #B2C7DA;
+  --fg: #F5F5F5;
+  --muted: #A3A3A3;
+  --ok: #3BB273;
+  --warn: #E0A526;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--ink);
+  color: var(--fg);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  word-break: keep-all;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-drama {
+  font-family: "Nanum Myeongjo", "Song Myung", serif;
+  letter-spacing: -0.02em;
+}
+
+.font-impact {
+  font-family: "Black Han Sans", sans-serif;
+}
+
+.font-mono-receipt {
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Subtle 3.5% SVG film grain overlay on theater surfaces */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* Perforated top receipt edge */
+.receipt-edge {
+  position: relative;
+}
+.receipt-edge::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-image: radial-gradient(circle at 6px 0, transparent 4px, var(--paper) 4.5px);
+  background-size: 12px 6px;
+}
+
+@keyframes kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate(-1.5%, -1%);
+  }
+  100% {
+    transform: scale(1.04) translate(1%, -0.5%);
+  }
+}
+
+.animate-kenburns {
+  animation: kenburns 8s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns {
+    animation: none;
+  }
+}
