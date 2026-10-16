@@ -1,151 +1,138 @@
-export type ChatLineKind =
-  | "text"
-  | "photo"
-  | "video"
-  | "emoticon"
-  | "link"
-  | "deleted"
-  | "system";
-
 export interface ChatLine {
-  id: string; // e.g. "L37"
-  ts: string; // ISO string or "YYYY-MM-DD HH:mm"
-  speaker: string;
+  id: number; // 1-indexed line number
+  date: string; // e.g., "2026-10-12 23:14"
+  user: string; // sender name in chat
   text: string;
-  kind: ChatLineKind;
 }
 
 export interface MemberConfig {
-  name: string;
-  alias: string;
-  consented: boolean;
-  selfieMediaId?: string;
-  selfieSource?: "sample" | "audition" | "none";
-  messageCount: number;
-  sampleLine: string;
+  name: string; // original chat name
+  alias: string; // drama alias / display name
+  included: boolean; // consent toggle (default true)
+  lineCount: number;
+  selfieId?: string; // media store ID if selfie attached
+  sampleSelfiePath?: string; // path in data/selfies if sample chat
 }
 
-export type VisualStyle = "photoreal" | "webtoon";
-
-export interface CastMember {
-  name: string;
-  originalName?: string;
-  archetype_ko: string;
-  why_en: string;
-  evidence: string[];
-  look_en: string;
-  screen_side?: "LEFT" | "RIGHT";
-  never?: string;
-  sheetMediaId?: string;
+export interface EvidenceReceipt {
+  line_id: number; // 1-indexed line ID from ChatLine
+  text_en: string; // natural English translation of the cited KakaoTalk line
 }
 
 export interface SeedItem {
-  event_ko: string;
-  evidence: string[];
-  makjang_twist_ko: string;
+  id: string;
+  summary: string;
+  summary_en?: string;
+  evidence: number[];
+  receipts?: EvidenceReceipt[];
+  twist_idea: string;
+  twist_idea_en?: string;
 }
 
-export interface TrailerShot {
-  shot: number;
-  setting_en: string;
-  characters: string[];
-  action_en: string;
-  motive_en?: string;
-  laugh_beat?: string;
-  prop_en?: string;
-  line_ko: string;
+export interface CastMember {
+  chat_name: string;
+  role_name: string;
+  archetype: string;
+  secret_ko: string;
+  look_en: string;
+}
+
+export interface ShotSpec {
+  n: number;
+  trope_id: string;
+  characters: string[]; // chat_name or role_name (max 3)
   speaker: string;
-  evidence: string[];
-  trope_ko: string;
-  keyframeMediaId?: string;
-  videoMediaId?: string;
-  dubAudioMediaId?: string;
-  liteMode?: boolean;
-  visionScore?: number;
-  cerScore?: number;
-  transcript?: string;
+  line_ko: string; // <= 20 Korean syllables
+  line_en: string; // natural English subtitle for foreign judges
+  scene_ko: string;
+  keyframe_prompt_en: string;
+  video_prompt_en: string;
+  camera_type: "two_shot_confrontation" | "slapstick_water" | "shock_zoom";
+  sfx_en: string;
+  evidence: number[];
+  receipts?: EvidenceReceipt[];
 }
 
 export interface ShowrunnerJSON {
   title_ko: string;
-  logline_en: string;
-  cast: CastMember[];
+  title_en: string;
+  logline_ko: string;
+  logline_en?: string;
   seeds: SeedItem[];
-  trailer: TrailerShot[];
-  narration_ko: string[];
+  cast: CastMember[];
+  shots: ShotSpec[];
+  narrator_ko: string;
+  narrator_en?: string;
 }
 
-export type VerifierCheckType =
-  | "evidence"
-  | "validity"
-  | "knowledge"
-  | "safety"
-  | "syllables"
-  | "consistency"
-  | "lipsync";
+export type VerifierStage =
+  | "v1_existence"
+  | "v1_validity"
+  | "v1_knowledge"
+  | "v1_safety"
+  | "v1_syllables"
+  | "v2_vision"
+  | "v3_audio";
 
 export interface VerifierResult {
   id: string;
-  check: VerifierCheckType;
-  target: string;
-  pass: boolean;
-  status: "warn" | "fixing" | "pass";
-  reason_ko: string;
-  fix_hint?: string;
-  timestamp: string;
+  stage: VerifierStage;
+  target: string; // e.g., "Shot #2" or "Seed s1"
+  status: "pass" | "warn" | "fixing" | "fail";
+  detail: string;
+  timestamp: number;
 }
 
-export type RunPhase =
-  | "draft" // parsed, waiting on Cast & Consent (HITL #1)
-  | "writers_room" // Argon showrunner + Verifier #1 + sheets
-  | "awaiting_approval" // HITL #2 waiting on user click (unless autoApprove)
-  | "shooting" // Keyframes + Verifier #2 + Omni x5 + Verifier #3 + TTS + Lyria
-  | "premiere" // Ready to play
-  | "error";
-
-export interface SSEEvent {
-  seq: number;
-  type:
-    | "phase"
-    | "status"
-    | "cite_lines"
-    | "seeds"
-    | "cast"
-    | "script"
-    | "verifier"
-    | "sheet_ready"
-    | "keyframe_ready"
-    | "shot_ready"
-    | "audio_ready"
-    | "member_updated"
-    | "complete"
-    | "error";
-  payload: Record<string, unknown>;
-  ts: string;
-}
+export type SSEEvent =
+  | { type: "status"; status: RunState["status"]; message?: string }
+  | { type: "cite_lines"; lineIds: number[] }
+  | {
+      type: "seeds";
+      seeds: SeedItem[];
+      title_ko: string;
+      title_en: string;
+      logline_ko: string;
+      logline_en?: string;
+    }
+  | { type: "cast"; cast: CastMember[] }
+  | { type: "verifier"; check: VerifierResult }
+  | { type: "script_ready"; script: ShowrunnerJSON }
+  | { type: "sheet_ready"; member: string; url: string }
+  | { type: "keyframe_ready"; shot: number; url: string }
+  | { type: "shot_ready"; shot: number; url: string; dubUrl?: string }
+  | { type: "audio_ready"; kind: "narrator" | "sting"; url: string }
+  | { type: "audition_selfie"; member: string; selfieUrl: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
 
 export interface RunState {
   id: string;
   createdAt: number;
   roomTitle: string;
-  sampleKey?: "A_friends" | "B_family" | "C_work";
   lines: ChatLine[];
   members: MemberConfig[];
-  style: VisualStyle;
-  excludedTopics: string;
-  autoApprove: boolean;
+  style: "live" | "webtoon";
+  excludedTopics: string[];
   quality: "draft" | "final";
-  liteModeForced?: boolean;
-  phase: RunPhase;
-  statusMessage: string;
-  citedLineIds: string[];
+  autoApprove: boolean;
+  status:
+    | "parsed"
+    | "consent"
+    | "writers_room"
+    | "awaiting_approval"
+    | "shooting"
+    | "premiere"
+    | "error";
+  argonInteractionId?: string;
   script?: ShowrunnerJSON;
-  verifiers: VerifierResult[];
-  narratorAudioMediaId?: string;
-  stingAudioMediaId?: string;
-  endingAudioMediaId?: string;
+  verifierLog: VerifierResult[];
+  characterSheets: Record<string, string>; // chat_name -> /api/media/:id
+  keyframes: Record<number, string>; // shot.n -> /api/media/:id
+  videos: Record<number, string>; // shot.n -> /api/media/:id
+  shotDubs: Record<number, string>; // shot.n -> /api/media/:id (fallback TTS dub)
+  narratorAudioUrl?: string;
+  stingAudioUrl?: string;
   error?: string;
   events: SSEEvent[];
   listeners: Set<(ev: SSEEvent) => void>;
-  approvalResolver?: () => void;
 }
