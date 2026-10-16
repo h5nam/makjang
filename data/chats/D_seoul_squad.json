@@ -1,0 +1,18 @@
+{
+ "title": "Seoul Survivors 🇰🇷",
+ "lines_per_month": 140,
+ "months": ["2026-08", "2026-09", "2026-10"],
+ "members": {
+  "Emma": "27, British, group organizer, overly dramatic, voice notes and CAPS when excited, calls everyone 'babes', K-drama addict",
+  "Lucas": "28, Brazilian, always late, charming, handles the group's shared Jeju trip kitty, vague whenever money comes up, 'kkkkk' laugh",
+  "Priya": "26, Indian-American, reads and ignores for days, dry one-liners, secretly busy, works in Gangnam",
+  "Kenji": "29, Japanese, food-obsessed, runs the group's restaurant list, puns, sends food photos at night",
+  "Mia": "27, German, just started at a Seoul startup, posts at 3am, very direct, slightly lonely"
+ },
+ "everyday_filler": ["where to eat in Hongdae", "visa and ARC office pain", "Korean class homework", "subway delays on Line 2", "convenience store snack finds", "noraebang plans", "weather/humidity complaints", "K-drama episode reactions", "Coupang deliveries", "gym excuses"],
+ "beats": {
+  "2026-08": "Emma creates the Jeju trip plan; everyone sends 90,000 won to Lucas who keeps the kitty. Kenji's 'last fried chicken drumstick' fight: someone ate it, Lucas denies, a zoomed-in photo later shows a bone on Lucas's plate. Emma tipsy at 2am: 'my mum just told me I was nearly adopted lol' then next morning 'pls forget what I said last night'.",
+  "2026-09": "Priya goes silent for 2 weeks (reads, no replies), later says 'work is insane'. Kenji casually mentions he saw Lucas and Priya together near Gangnam Station late at night. Lucas posts a photo of a shiny new watch: 'got it second hand, super cheap'. Mia's birthday (Sept 22) is forgotten by everyone; next day Mia: 'it's fine haha'. Mia gets quieter.",
+  "2026-10": "Emma asks for the Jeju kitty balance; Lucas sends a screenshot showing 360,000 won instead of 450,000; 'bank app glitch'. Mia leaves the group, Emma re-adds her. Priya: 'I need to tell you guys something' then goes offline. Last line: Emma 'EMERGENCY MEETING. Friday. Kenji's place. Everyone.'"
+ }
+}

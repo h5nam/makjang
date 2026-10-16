@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LandingUpload, ParsedSessionData } from "@/components/LandingUpload";
+import { ParsedSessionData } from "@/components/LandingUpload";
+import { MakjangLanding } from "@/components/landing/MakjangLanding";
 import { CastConsent } from "@/components/CastConsent";
 import { WritersRoom } from "@/components/WritersRoom";
 import { ScriptApprove } from "@/components/ScriptApprove";
@@ -44,6 +45,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col justify-between bg-[#0B0B0C] text-[#F5F5F5]">
       {/* Header (64px, transparent over hero on landing, solid --ink after scroll or inside flow) */}
+      {!isLanding && (
       <header
         className={`w-full h-16 px-5 sm:px-8 flex items-center justify-between transition-colors duration-300 z-40 ${
           isLanding ? "fixed top-0 inset-x-0" : "sticky top-0"
@@ -125,11 +127,12 @@ export default function HomePage() {
           </div>
         )}
       </header>
+      )}
 
       {/* Main Content */}
       <div className="flex-1">
         {step === "upload" && (
-          <LandingUpload
+          <MakjangLanding
             onParsed={(data) => {
               setSession(data);
               setAssets(null);
