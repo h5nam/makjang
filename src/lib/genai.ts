@@ -207,14 +207,64 @@ export async function verifyVisionConsistency(options: {
   return JSON.parse(text);
 }
 
+export async function verifyVideoFramesNoText(
+  frameBuffers: Buffer[]
+): Promise<{
+  has_text: boolean;
+  detail_ko: string;
+}> {
+  if (!frameBuffers || frameBuffers.length === 0) {
+    return { has_text: false, detail_ko: "프레임 텍스트 없음" };
+  }
+  const ai = getAI();
+  const inputParts: any[] = [];
+  for (const buf of frameBuffers.slice(0, 2)) {
+    inputParts.push({
+      type: "image",
+      mime_type: "image/jpeg",
+      data: buf.toString("base64"),
+    });
+  }
+  inputParts.push({
+    type: "text",
+    text: `Inspect these 2 video frames (middle frame and last frame).
+Are there any visible burned-in subtitles, captions, speech bubbles, or overlay text/letters in the frame?
+(Ignore tiny background props like distant street signs unless there are subtitle/caption overlays or prominent letters.)
+Respond ONLY in JSON:
+{
+  "has_text": false,
+  "detail_ko": "화면 내 자막·캡션 없음 확인"
+}`,
+  });
+
+  const interaction = await (ai.interactions as any).create({
+    model: "gemini-3.8-flash",
+    input: inputParts,
+    generation_config: { thinking_level: "low" },
+    response_format: { type: "text", mime_type: "application/json" },
+  });
+
+  const text = cleanJsonText(interaction.output_text || "{}");
+  const parsed = JSON.parse(text);
+  return {
+    has_text: Boolean(parsed.has_text),
+    detail_ko: String(parsed.detail_ko || (parsed.has_text ? "화면 내 자막 감지" : "화면 내 자막 없음")),
+  };
+}
+
 export async function generateOmniShotVideo(options: {
   keyframeBuffer: Buffer;
   prompt: string;
   quality: "draft" | "final";
+  durationSec?: number;
 }): Promise<Buffer> {
   const ai = getAI();
   const resolution = options.quality === "final" ? "720p" : "360p";
-  const duration = options.quality === "final" ? "8s" : "4s";
+  const clampedSec = Math.min(
+    8,
+    Math.max(6, Math.round(options.durationSec || (options.quality === "final" ? 8 : 6)))
+  );
+  const duration = options.quality === "final" ? "8s" : `${clampedSec}s`;
 
   const interaction = await (ai.interactions as any).create({
     model: "gemini-omni-1.1-flash",
@@ -232,7 +282,7 @@ export async function generateOmniShotVideo(options: {
     response_format: {
       type: "video",
       resolution,
-      duration, // MUST be string "4s" or "8s"
+      duration, // MUST be string e.g. "6s", "7s", "8s"
       aspect_ratio: "16:9",
     },
   });

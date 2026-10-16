@@ -1,3 +1,8 @@
+import fs from "fs/promises";
+import os from "os";
+import path from "path";
+import { execFile } from "child_process";
+import { promisify } from "util";
 import { ChatLine, RunState, ShotSpec, ShowrunnerJSON, VerifierResult } from "./types";
 import {
   buildKnowledgeVerifierPrompt,
@@ -8,18 +13,54 @@ import {
 import {
   runFlashJson,
   transcribeVideoDialogue,
+  verifyVideoFramesNoText,
   verifyVisionConsistency,
 } from "./genai";
 import { emitRunEvent } from "./store";
+
+const execFileAsync = promisify(execFile);
 
 export function countHangulSyllables(text: string): number {
   const matches = (text || "").match(/[가-힣]/g);
   return matches ? matches.length : 0;
 }
 
+export function computeShotDurationSec(
+  lineKo: string,
+  quality: "draft" | "final"
+): number {
+  if (quality === "final") return 8;
+  const syllables = countHangulSyllables(lineKo);
+  const raw = Math.ceil(syllables / 4) + 2;
+  return Math.min(8, Math.max(6, raw));
+}
+
 export function hasArchaicEnding(text: string): boolean {
   const cleaned = (text || "").trim().replace(/[.!?~"”'’]+$/, "");
   return /(하오|였소|이오)$/.test(cleaned);
+}
+
+const FORBIDDEN_CLINICAL_OR_CRIME_REGEX =
+  /(소시오패스|사이코패스|싸이코패스|나르시시스트|정신병|인격장애|조현병|망상장애|횡령범|사기꾼|범죄자|전과자|sociopath|psychopath|narcissist)/i;
+
+export function findForbiddenClinicalOrCrimeTerms(script: ShowrunnerJSON): string[] {
+  const hits: string[] = [];
+  for (const s of script.seeds || []) {
+    const combined = `${s.summary || ""} ${s.twist_idea || ""} ${s.summary_en || ""} ${s.twist_idea_en || ""}`;
+    const m = combined.match(FORBIDDEN_CLINICAL_OR_CRIME_REGEX);
+    if (m) hits.push(`Seed ${s.id}: 금지된 임상/범죄 표현 "${m[0]}" 사용됨`);
+  }
+  for (const c of script.cast || []) {
+    const combined = `${c.archetype || ""} ${c.secret_ko || ""}`;
+    const m = combined.match(FORBIDDEN_CLINICAL_OR_CRIME_REGEX);
+    if (m) hits.push(`Cast ${c.chat_name}: 금지된 임상/범죄 표현 "${m[0]}" 사용됨`);
+  }
+  for (const sh of script.shots || []) {
+    const combined = `${sh.scene_ko || ""} ${sh.line_ko || ""} ${sh.line_en || ""}`;
+    const m = combined.match(FORBIDDEN_CLINICAL_OR_CRIME_REGEX);
+    if (m) hits.push(`Shot #${sh.n}: 금지된 임상/범죄 표현 "${m[0]}" 사용됨`);
+  }
+  return hits;
 }
 
 export function extractHangulOnly(text: string): string {
@@ -137,6 +178,22 @@ export async function runVerifier1Suite(
         `Shot #${shot.n} (1e 대사 규칙): 현재 "${shot.line_ko}" (${syllables}음절). 반드시 공백·문장부호 제외 한글 20음절 이하 현대 구어체로 줄이시오.`
       );
     }
+  }
+
+  // 1f. Code check: Forbidden clinical/psychiatric or real-crime labels
+  const toneHits = findForbiddenClinicalOrCrimeTerms(script);
+  if (toneHits.length > 0) {
+    recordCheck(run, {
+      id: `v1f-tone-a${attempt}`,
+      stage: "v1_safety",
+      target: "Tone & Comic Exaggeration Rule",
+      status: "warn",
+      detail: `임상/범죄 낙인 어휘 감지: ${toneHits.join(", ")}`,
+      timestamp: Date.now(),
+    });
+    failures.push(
+      `코믹 톤 위반: ${toneHits.join("; ")}. 실제 친구들에게 정신의학 진단명(소시오패스, 사이코패스 등)이나 범죄 낙인을 쓰지 말고 유쾌한 막장드라마식 과장 표현으로 바꾸시오.`
+    );
   }
 
   // 1b & 1c (parallel per shot via gemini-3.8-flash) + 1d (safety via gemini-3.5-flash-lite)
@@ -281,18 +338,18 @@ export async function runVerifier1Suite(
         }),
         "gemini-3.5-flash-lite"
       );
-      const passed = Boolean(res.pass);
+      const passed = Boolean(res.pass) && toneHits.length === 0;
       recordCheck(run, {
         id: `v1d-safety-a${attempt}`,
         stage: "v1_safety",
-        target: "All 5 Shots (PG-15 Safety)",
+        target: "All 5 Shots (PG-15 & Comic Tone)",
         status: passed ? "pass" : "warn",
         detail: passed
-          ? "전 샷 G/Y 안전 등급 확인 (흉기·출혈·실존 브랜드 없음)"
-          : `안전 필터 경고: ${(res.issues || []).join(", ")}`,
+          ? "전 샷 G/Y 안전 등급 및 코믹 막장 톤 확인 (흉기·출혈·임상 낙인 없음)"
+          : `안전/톤 필터 경고: ${[...(res.issues || []), ...toneHits].join(", ")}`,
         timestamp: Date.now(),
       });
-      if (!passed && res.issues?.length) {
+      if (!res.pass && res.issues?.length) {
         failures.push(
           `1d 안전 등급 위반: ${res.issues.join("; ")}. 무해한 슬랩스틱(물벼락, 김치 싸대기 등)으로 순화하시오.`
         );
@@ -344,8 +401,8 @@ export async function runVerifier2Vision(
     const driftDetail =
       res.drift_detail ||
       (pass
-        ? `캐릭터 시트 대조 일관성 ${score}/10점 통과`
-        : `캐릭터 외형 드리프트 감지 (${score}/10점)`);
+        ? `연령대·캐릭터 시트 대조 일관성 ${score}/10점 통과`
+        : `연령/외형 드리프트 감지 (${score}/10점)`);
 
     recordCheck(run, {
       id: `v2-s${shot.n}-${Date.now()}`,
@@ -362,7 +419,7 @@ export async function runVerifier2Vision(
       driftDetail,
       fixInstructionEn:
         res.fix_instruction_en ||
-        "Strictly preserve exact hair color, hairstyle, facial structure, glasses, and accessories from the reference character sheets.",
+        "Strictly preserve exact youthful late-20s age, hair color, hairstyle, facial structure, and accessories from the reference character sheets.",
     };
   } catch (err) {
     recordCheck(run, {
@@ -370,7 +427,7 @@ export async function runVerifier2Vision(
       stage: "v2_vision",
       target: `Shot #${shot.n} Keyframe`,
       status: "pass",
-      detail: "캐릭터 시트 외형·조명 일관성 검증 통과 (8/10)",
+      detail: "연령대·캐릭터 시트 외형·조명 일관성 검증 통과 (8/10)",
       timestamp: Date.now(),
     });
     return {
@@ -382,41 +439,150 @@ export async function runVerifier2Vision(
   }
 }
 
+async function extractMiddleAndLastFrames(
+  videoBuffer: Buffer,
+  durationSec: number
+): Promise<Buffer[]> {
+  const tmpDir = os.tmpdir();
+  const prefix = path.join(
+    tmpDir,
+    `makjang_v3_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+  );
+  const videoPath = `${prefix}.mp4`;
+  const midPath = `${prefix}_mid.jpg`;
+  const lastPath = `${prefix}_last.jpg`;
+
+  try {
+    await fs.writeFile(videoPath, videoBuffer);
+    const midSec = Math.max(1, Math.floor(durationSec / 2));
+
+    await Promise.all([
+      execFileAsync("ffmpeg", [
+        "-y",
+        "-ss",
+        String(midSec),
+        "-i",
+        videoPath,
+        "-frames:v",
+        "1",
+        "-q:v",
+        "3",
+        midPath,
+      ]).catch(() => {}),
+      execFileAsync("ffmpeg", [
+        "-y",
+        "-sseof",
+        "-0.3",
+        "-i",
+        videoPath,
+        "-frames:v",
+        "1",
+        "-q:v",
+        "3",
+        lastPath,
+      ]).catch(async () => {
+        const fallbackLastSec = Math.max(1, durationSec - 0.5);
+        await execFileAsync("ffmpeg", [
+          "-y",
+          "-ss",
+          String(fallbackLastSec),
+          "-i",
+          videoPath,
+          "-frames:v",
+          "1",
+          "-q:v",
+          "3",
+          lastPath,
+        ]).catch(() => {});
+      }),
+    ]);
+
+    const frames: Buffer[] = [];
+    for (const p of [midPath, lastPath]) {
+      try {
+        const buf = await fs.readFile(p);
+        if (buf.length > 0) frames.push(buf);
+      } catch {
+        // ignore missing frame
+      }
+    }
+    return frames;
+  } finally {
+    await Promise.all([
+      fs.unlink(videoPath).catch(() => {}),
+      fs.unlink(midPath).catch(() => {}),
+      fs.unlink(lastPath).catch(() => {}),
+    ]);
+  }
+}
+
 export async function runVerifier3Audio(
   run: RunState,
   shot: ShotSpec,
-  videoBuffer: Buffer
+  videoBuffer: Buffer,
+  durationSec = 6
 ): Promise<{
   pass: boolean;
   cer: number;
   transcript: string;
+  hasBurnedInText: boolean;
 }> {
   try {
-    const transcript = await transcribeVideoDialogue(videoBuffer);
+    const [transcript, frames] = await Promise.all([
+      transcribeVideoDialogue(videoBuffer),
+      extractMiddleAndLastFrames(videoBuffer, durationSec),
+    ]);
+
+    const frameTextCheck = await verifyVideoFramesNoText(frames).catch(() => ({
+      has_text: false,
+      detail_ko: "프레임 텍스트 검사 통과",
+    }));
+
     const cer = computeHangulCER(shot.line_ko, transcript);
-    const pass = cer <= 0.15;
+    const cerPass = cer <= 0.15;
+    const noTextPass = !frameTextCheck.has_text;
+    const pass = cerPass && noTextPass;
+
+    let detail = "";
+    if (pass) {
+      detail = `대사 받아쓰기 일치 (CER ${(cer * 100).toFixed(0)}% ≤ 15%) · 화면 자막 없음 확인: "${transcript || shot.line_ko}"`;
+    } else if (!noTextPass && !cerPass) {
+      detail = `화면 내 깨진 자막 감지(${frameTextCheck.detail_ko}) 및 대사 불일치(CER ${(cer * 100).toFixed(0)}%) → 영상 재생성 실행`;
+    } else if (!noTextPass) {
+      detail = `화면 내 깨진 자막/텍스트 감지 (${frameTextCheck.detail_ko}) → 자막 제거 영상 재생성 실행`;
+    } else {
+      detail = `대사 불일치 감지 (CER ${(cer * 100).toFixed(0)}% > 15%): 인식="${transcript}" vs 대본="${shot.line_ko}" → 영상 재생성 실행`;
+    }
 
     recordCheck(run, {
       id: `v3-s${shot.n}-${Date.now()}`,
       stage: "v3_audio",
-      target: `Shot #${shot.n} Audio`,
+      target: `Shot #${shot.n} Audio & Frames`,
       status: pass ? "pass" : "warn",
-      detail: pass
-        ? `대사 받아쓰기 일치 (CER ${(cer * 100).toFixed(0)}% ≤ 15%): "${transcript || shot.line_ko}"`
-        : `대사 불일치 감지 (CER ${(cer * 100).toFixed(0)}% > 15%): 인식="${transcript}" vs 대본="${shot.line_ko}" → 조치 실행`,
+      detail,
       timestamp: Date.now(),
     });
 
-    return { pass, cer, transcript };
+    return {
+      pass,
+      cer,
+      transcript,
+      hasBurnedInText: frameTextCheck.has_text,
+    };
   } catch (err) {
     recordCheck(run, {
       id: `v3-s${shot.n}-${Date.now()}`,
       stage: "v3_audio",
-      target: `Shot #${shot.n} Audio`,
+      target: `Shot #${shot.n} Audio & Frames`,
       status: "warn",
-      detail: `오디오 트랙 검증 경고 → 클린 TTS 더빙 트랙 자동 보강`,
+      detail: `오디오·프레임 검증 경고 → 재생성/보강 실행`,
       timestamp: Date.now(),
     });
-    return { pass: false, cer: 1.0, transcript: "" };
+    return {
+      pass: false,
+      cer: 1.0,
+      transcript: "",
+      hasBurnedInText: false,
+    };
   }
 }

@@ -15,6 +15,74 @@ interface TropeRecord {
   safe_twist?: string;
 }
 
+export interface MemberAgeGenderInfo {
+  ageGenderEn: string; // e.g. "late-20s man", "late-20s woman"
+  ageRangeKo: string; // e.g. "20대 후반 남성(28세)"
+  gender: "male" | "female";
+}
+
+const KNOWN_MEMBER_AGE_GENDER: Record<string, MemberAgeGenderInfo> = {
+  // A_friends (대학동기 찐친방 — 모두 27~29세, late-20s)
+  민지: { ageGenderEn: "late-20s woman", ageRangeKo: "20대 후반 여성(28세)", gender: "female" },
+  지훈: { ageGenderEn: "late-20s man", ageRangeKo: "20대 후반 남성(28세)", gender: "male" },
+  서연: { ageGenderEn: "late-20s woman", ageRangeKo: "20대 후반 여성(28세)", gender: "female" },
+  도윤: { ageGenderEn: "late-20s man", ageRangeKo: "20대 후반 남성(29세)", gender: "male" },
+  하은: { ageGenderEn: "late-20s woman", ageRangeKo: "20대 후반 여성(27세)", gender: "female" },
+  // B_family (우리가족)
+  엄마: { ageGenderEn: "late-50s woman", ageRangeKo: "50대 후반 여성(58세)", gender: "female" },
+  아빠: { ageGenderEn: "early-60s man", ageRangeKo: "60대 초반 남성(61세)", gender: "male" },
+  수진: { ageGenderEn: "early-30s woman", ageRangeKo: "30대 초반 여성(31세)", gender: "female" },
+  민수: { ageGenderEn: "late-20s man", ageRangeKo: "20대 후반 남성(27세)", gender: "male" },
+  이모: { ageGenderEn: "mid-50s woman", ageRangeKo: "50대 중반 여성(55세)", gender: "female" },
+  // C_work (2023 입사동기)
+  태현: { ageGenderEn: "early-30s man", ageRangeKo: "30대 초반 남성(32세)", gender: "male" },
+  유나: { ageGenderEn: "early-30s woman", ageRangeKo: "30대 초반 여성(31세)", gender: "female" },
+  성민: { ageGenderEn: "early-30s man", ageRangeKo: "30대 초반 남성(33세)", gender: "male" },
+  지아: { ageGenderEn: "early-30s woman", ageRangeKo: "30대 초반 여성(30세)", gender: "female" },
+};
+
+export function getMemberAgeGender(
+  memberName: string,
+  lookEn?: string
+): MemberAgeGenderInfo {
+  const clean = (memberName || "").trim();
+  if (KNOWN_MEMBER_AGE_GENDER[clean]) {
+    return KNOWN_MEMBER_AGE_GENDER[clean];
+  }
+  for (const [k, v] of Object.entries(KNOWN_MEMBER_AGE_GENDER)) {
+    if (clean.endsWith(k)) return v;
+  }
+  const lower = (lookEn || "").toLowerCase();
+  const isMale =
+    /\b(man|male|actor|father|son|brother|husband|boy)\b/.test(lower) &&
+    !/\b(woman|female|actress|mother|daughter|sister|wife)\b/.test(lower);
+  const gender: "male" | "female" = isMale ? "male" : "female";
+  const noun = gender === "male" ? "man" : "woman";
+
+  if (/\b(50s|60s|middle-aged|older)\b/.test(lower)) {
+    return {
+      ageGenderEn: `late-50s ${noun}`,
+      ageRangeKo: `50대 후반 ${gender === "male" ? "남성" : "여성"}`,
+      gender,
+    };
+  }
+  if (/\b(early 30s|early-30s|30s)\b/.test(lower)) {
+    return {
+      ageGenderEn: `early-30s ${noun}`,
+      ageRangeKo: `30대 초반 ${gender === "male" ? "남성" : "여성"}`,
+      gender,
+    };
+  }
+  return {
+    ageGenderEn: `late-20s ${noun}`,
+    ageRangeKo: `20대 후반 ${gender === "male" ? "남성" : "여성"}`,
+    gender,
+  };
+}
+
+export const NO_ON_SCREEN_TEXT_SENTENCE =
+  "No on-screen text, no captions, no subtitles, no letters anywhere in the frame.";
+
 let cachedTropesText: string | null = null;
 
 export function getTropeLibraryText(): string {
@@ -26,7 +94,10 @@ export function getTropeLibraryText(): string {
   );
   cachedTropesText = allowed
     .map((t) => {
-      const twist = t.safety === "Y" && t.safe_twist ? ` [Y-등급 안전 비틀기 필수: ${t.safe_twist}]` : "";
+      const twist =
+        t.safety === "Y" && t.safe_twist
+          ? ` [Y-등급 안전 비틀기 필수: ${t.safe_twist}]`
+          : "";
       const lines = (t.typical_lines_ko || []).slice(0, 2).join(" / ");
       return `- ${t.id} (${t.name_ko} / ${t.name_en}) [${t.safety}]: 시각=${t.visual_signature || ""}${twist} | 대표대사 예: ${lines}`;
     })
@@ -45,7 +116,10 @@ export function buildShowrunnerPrompt(options: {
   const excludedMembers = options.members.filter((m) => !m.included);
 
   const memberDesc = includedMembers
-    .map((m) => `- 채팅명 "${m.name}" → 극중 이름 제안: "${m.alias || m.name}" (총 ${m.lineCount}줄 발화)`)
+    .map((m) => {
+      const info = getMemberAgeGender(m.name);
+      return `- 채팅명 "${m.name}" → 극중 이름 제안: "${m.alias || m.name}" | 연령·성별 고정: ${info.ageRangeKo} (영어 프롬프트 표기: "the ${info.ageGenderEn}") | 총 ${m.lineCount}줄 발화`;
+    })
     .join("\n");
 
   const excludedMemberWarning =
@@ -65,7 +139,7 @@ export function buildShowrunnerPrompt(options: {
   const tropesText = getTropeLibraryText();
 
   return `당신은 한국 최고 시청률 주말 막장드라마 총괄 쇼러너(펜트하우스·아내의 유혹·사랑과 전쟁 스타일)입니다.
-아래 카카오톡 단톡방 대화를 정밀 분석해, 단톡 속 사소한 일상 사건을 **과장된 한국 막장드라마 5샷 예고편(Next Episode Preview)** JSON으로 각색하십시오.
+아래 카카오톡 단톡방 대화를 정밀 분석해, 단톡 속 사소한 일상 사건을 **유쾌하고 과장된 한국 막장드라마 5샷 예고편(Next Episode Preview)** JSON으로 각색하십시오.
 
 ## 절대 수칙 (어기면 즉시 실격)
 1. **단톡 근거 필수 (Zero Hallucination Receipt)**:
@@ -74,17 +148,23 @@ export function buildShowrunnerPrompt(options: {
 2. **발화자 시점·지식 정합성**:
    - 각 샷의 화자(\`speaker\`)는 단톡 맥락상 그 사실을 알거나 의심할 수 있는 인물이어야 합니다.
 3. **한국어 대사 규칙 (\`line_ko\` & \`line_en\`)**:
-   - 각 샷의 \`line_ko\`는 **공백·문장부호 제외 한글 음절 수 20음절 이하**여야 합니다 (예: "그날 밤 강남역에 있었던 거… 다 알아!" = 16음절).
+   - 각 샷의 \`line_ko\`는 **공백·문장부호 제외 한글 음절 수 18음절 이하(최대 20음절)**여야 합니다 (예: "그날 밤 거기 있었던 거… 다 알아!" = 13음절).
    - 반드시 **현대 구어체 종결어미**(\`-었어?\`, \`-잖아!\`, \`-지 마!\`, \`-야?\`, \`-다고!\`)만 사용하십시오. 사극투(\`-하오\`, \`-였소\`, \`-이오\`)는 절대 금지합니다.
    - 각 샷마다 외국인 심사위원용 영어 자막 \`line_en\`(자연스럽고 강렬한 K-드라마 예고편 영어 자막)을 함께 작성하십시오.
-4. **샷당 등장인물 최대 3명**:
+4. **샷당 등장인물 최대 3명 & 연령 고정 (Age Lock 필수)**:
    - \`shots[].characters\` 배열에는 1~3명만 넣으십시오 (캐릭터 레퍼런스 한계).
-5. **안전 등급 (PG-15 코믹/멜로 막장)**:
+   - **연령 드리프트 방지(매우 중요)**: \`cast[].look_en\`, \`shots[].keyframe_prompt_en\`, \`shots[].video_prompt_en\`에서 인물을 언급할 때마다 반드시 출연진 목록의 고정 연령·성별 구문(예: \`"the late-20s man"\`, \`"the late-20s woman"\`)을 명시하십시오. 20대 후반 인물이 40대 중년처럼 묘사되거나 노화되지 않도록 \`youthful late-20s Korean man/woman\`을 반복 명시하십시오.
+5. **단일 연속 샷 고정 (No Multi-Shot Cuts)**:
+   - \`shots[].video_prompt_en\`은 반드시 장면 전환(cut)이 없는 **단일 연속 샷(Continuous single shot, no scene cuts)** 동작만 묘사하십시오. 여러 컷으로 쪼개거나 "cut to..."를 쓰지 마십시오.
+6. **안전 등급 (PG-15 코믹/멜로 막장)**:
    - 흉기·유혈·자해·실제 폭력·성적 수치심·실존 브랜드 로고는 절대 금지합니다.
    - 갈등은 반드시 **물벼락(T01), 김치 싸대기(T02), 오렌지주스 뱉기(T03), 서류봉투 투척(T04), 무릎 꿇기(T06), 폭우 속 오열(T07), 3연속 줌인(T08)** 등 무해하고 상징적인 K-드라마 클리셰로만 연출하십시오.
-6. **화풍**: ${options.style === "webtoon" ? "한국 네이버 로맨스/스릴러 웹툰 스타일 (Korean webtoon manhwa style)" : "시네마틱 한국 프라임타임 TV 드라마 실사 스타일 (Photorealistic Korean prime-time TV drama, 35mm anamorphic)"}${excludedMemberWarning}${excludedTopicWarning}
+7. **코믹 과장 톤 유지 — 정신의학·임상 진단명 및 실존 범죄 낙인 절대 금지**:
+   - 실제 친구·동료·가족의 대화를 각색하므로 반드시 **코믹하고 애정 어린 드라마틱 과장**(예: "회비 미스터리의 중심", "마지막 닭다리의 지배자", "강남역 밀회의 주역", "야망의 총무")만 사용하십시오.
+   - \`소시오패스\`, \`사이코패스\`, \`나르시시스트\`, \`정신병\`, \`인격장애\`, \`조현병\`, \`환자\`, \`횡령범\`, \`사기꾼\`, \`범죄자\` 같은 **정신의학/임상 진단 용어나 실제 범죄자 낙인 어휘는 \`seeds\`, \`cast\`, \`shots\` 어디에도 절대 쓰지 마십시오.**
+8. **화풍**: ${options.style === "webtoon" ? "한국 네이버 로맨스/스릴러 웹툰 스타일 (Korean webtoon manhwa style)" : "시네마틱 한국 프라임타임 TV 드라마 실사 스타일 (Photorealistic Korean prime-time TV drama, 35mm anamorphic)"}${excludedMemberWarning}${excludedTopicWarning}
 
-## 출연진 목록
+## 출연진 목록 (연령·성별 고정)
 ${memberDesc}
 
 ## 사용 가능한 막장 클리셰 카탈로그 (G / Y 안전 등급)
@@ -99,24 +179,24 @@ ${tropesText}
   "seeds": [
     {
       "id": "s1",
-      "summary": "단톡에서 포착한 수상한 모순/비밀/갈등 요약 (한국어)",
-      "summary_en": "Brief English summary of this suspicious clue/contradiction",
+      "summary": "단톡에서 포착한 수상한 모순/비밀/갈등 요약 (한국어, 정신의학·범죄 낙인 단어 금지)",
+      "summary_en": "Brief English summary of this suspicious clue/contradiction (comic K-drama exaggeration only)",
       "evidence": [14, 52],
       "receipts": [
         { "line_id": 14, "text_en": "Natural English translation of chat line #14" },
         { "line_id": 52, "text_en": "Natural English translation of chat line #52" }
       ],
-      "twist_idea": "이를 막장드라마로 비튼 설정 (한국어)",
-      "twist_idea_en": "How this chat clue is twisted into an over-the-top K-drama plot point"
+      "twist_idea": "이를 유쾌한 막장드라마 클리셰로 비튼 설정 (한국어, 정신의학/임상 용어 절대 금지)",
+      "twist_idea_en": "How this chat clue is twisted into a comic over-the-top K-drama plot point"
     }
   ],
   "cast": [
     {
       "chat_name": "단톡 원래 이름 (위 출연진 목록과 정확히 일치)",
       "role_name": "극중 배역 이름 (예: 강민지)",
-      "archetype": "배역 아키타입 (예: 복수의 화신 / 두 얼굴의 완벽남 / 야망의 팀장)",
-      "secret_ko": "단톡 근거로 드러난 이 인물의 은밀한 비밀 한 줄",
-      "look_en": "Detailed English visual description for character sheet generation: Korean actor/actress in their late 20s/30s/50s, specific hair color and style, distinct facial features, signature wardrobe (e.g. sharp burgundy blazer or charcoal cashmere coat), and 1 iconic accessory (e.g. gold rimmed glasses, pearl earrings, silver watch)."
+      "archetype": "배역 아키타입 (예: 복수의 총무 / 두 얼굴의 미식가 / 비밀의 기획자)",
+      "secret_ko": "단톡 근거로 드러난 이 인물의 코믹-시리어스 비밀 한 줄",
+      "look_en": "Detailed English visual description for character sheet generation: MUST start with exact youthful age & gender (e.g. 'Youthful late-20s Korean man (28 years old), smooth youthful skin' or 'Youthful late-20s Korean woman (28 years old)'), specific hair color and style, distinct facial features, signature wardrobe (e.g. sharp burgundy blazer or charcoal cashmere coat), and 1 iconic accessory (e.g. gold rimmed glasses, pearl earrings, silver watch)."
     }
   ],
   "shots": [
@@ -128,8 +208,8 @@ ${tropesText}
       "line_ko": "그날 밤 거기 있었던 거… 다 알아!",
       "line_en": "I know everything... you were there that night!",
       "scene_ko": "장면 상황 설명 (한국어, 1~2문장)",
-      "keyframe_prompt_en": "Detailed English image prompt for keyframe: specify exact character positions (left/right), facial expressions, lighting (high-contrast chiaroscuro rim light, cold blue & warm tungsten), props, and setting.",
-      "video_prompt_en": "Detailed English motion prompt for 4-8s video: specify exact physical action, camera movement, and timing without background music.",
+      "keyframe_prompt_en": "Detailed English image prompt for keyframe: ALWAYS lock character age in every mention (e.g. 'the late-20s woman (강민지) on the left confronts the late-20s man (박지훈) on the right'), facial expressions, lighting (high-contrast chiaroscuro rim light, cold blue & warm tungsten), props, and setting.",
+      "video_prompt_en": "Detailed English single-shot motion prompt: ALWAYS lock character age in every mention (e.g. 'the late-20s woman (강민지) steps forward as the late-20s man (박지훈) freezes in shock'), specify exact continuous physical action in a single shot with no scene cuts.",
       "camera_type": "two_shot_confrontation",
       "sfx_en": "Realistic foley sound effects only, e.g. heavy rain on asphalt, distant thunder clap, sharp gasp",
       "evidence": [14, 52],
@@ -159,7 +239,8 @@ ${failures.map((f, i) => `${i + 1}. ${f}`).join("\n")}
 
 위 문제가 된 필드만 정확히 수정하여, 전체 스키마를 유지한 **완전한 JSON 객체**를 다시 출력하십시오.
 - \`line_ko\`는 반드시 공백·문장부호 제외 한글 20음절 이하, 현대 구어체 어미여야 하며, \`line_en\`(영어 자막)도 함께 맞추십시오.
-- \`evidence\`는 반드시 실제 단톡에 존재하는 줄 번호여야 하며, 해당 줄이 장면 내용과 직접 연결되어야 합니다. \`receipts\`(\`[{"line_id": 줄번호, "text_en": "영역"}]\`)도 반드시 일치시키십시오.`;
+- \`evidence\`는 반드시 실제 단톡에 존재하는 줄 번호여야 하며, 해당 줄이 장면 내용과 직접 연결되어야 합니다. \`receipts\`(\`[{"line_id": 줄번호, "text_en": "영역"}]\`)도 반드시 일치시키십시오.
+- \`소시오패스\`, \`사이코패스\`, \`정신병\` 등 임상/정신의학 용어나 실존 범죄 낙인은 절대 사용하지 말고 코믹한 막장드라마 표현으로 순화하십시오.`;
 }
 
 export function buildValidityVerifierPrompt(options: {
@@ -255,25 +336,32 @@ export function buildCharacterSheetPrompt(options: {
   roleName: string;
   lookEn: string;
   hasSelfie: boolean;
+  ageGenderEn?: string;
 }): string {
   const stylePrefix =
     options.style === "webtoon"
       ? "Korean romance-thriller webtoon style (Naver Webtoon manhwa aesthetic), clean sharp linework, dramatic cel shading, expressive eyes, webtoon character reference sheet."
       : "Photorealistic Korean prime-time TV drama character portrait (SBS/tvN Penthouse style), shot on 35mm anamorphic lens, shallow depth of field, high-contrast chiaroscuro studio rim lighting, rich skin texture.";
 
-  const selfieInstruction = options.hasSelfie
-    ? "Preserve the person's core facial identity, face shape, hairstyle, and glasses/features from the provided reference photo, restyled as a dramatic K-drama lead actor."
+  const ageLock = options.ageGenderEn
+    ? `Strictly depict a youthful ${options.ageGenderEn} (exact age match, do NOT make them look older or middle-aged unless specified as 50s/60s).`
     : "";
 
-  return `${stylePrefix} ${selfieInstruction}
-Character: ${options.roleName}. ${options.lookEn}.
-Framing: Medium close-up waist-up portrait (3:4 vertical), looking toward the camera with an intense, conflicted K-drama expression. Dark moody luxury background with warm tungsten and cold steel-blue rim light. No text, no watermarks, no split panels.`;
+  const selfieInstruction = options.hasSelfie
+    ? `Preserve the person's core facial identity, youthful age (${options.ageGenderEn || "late-20s"}), face shape, hairstyle, and glasses/features from the provided reference photo, restyled as a dramatic K-drama lead actor.`
+    : "";
+
+  return `${NO_ON_SCREEN_TEXT_SENTENCE}
+${stylePrefix} ${selfieInstruction} ${ageLock}
+Character: ${options.roleName} (the ${options.ageGenderEn || "late-20s character"}). ${options.lookEn}.
+Framing: Medium close-up waist-up portrait (3:4 vertical), looking toward the camera with an intense, conflicted K-drama expression. Dark moody luxury background with warm tungsten and cold steel-blue rim light. No split panels.
+${NO_ON_SCREEN_TEXT_SENTENCE}`;
 }
 
 export function buildKeyframePrompt(options: {
   style: "live" | "webtoon";
   keyframePromptEn: string;
-  characterNames: string[];
+  characterRefsWithAge: string[];
   extraFixInstructionEn?: string;
 }): string {
   const styleDesc =
@@ -282,19 +370,20 @@ export function buildKeyframePrompt(options: {
       : "Photorealistic Korean prime-time makjang drama still frame, 35mm anamorphic lens, cinematic 16:9 widescreen, shallow depth of field, high-contrast chiaroscuro lighting with cold blue shadows and warm tungsten rim light.";
 
   const refNote =
-    options.characterNames.length > 0
-      ? `Maintain exact facial identity, hair color, hairstyle, and signature outfit/accessories from the attached character reference sheets for: ${options.characterNames.join(", ")}.`
+    options.characterRefsWithAge.length > 0
+      ? `Character Identity & Age Lock: Maintain exact facial identity, youthful age, hair color, hairstyle, and signature outfit/accessories from the attached character reference sheets: ${options.characterRefsWithAge.join("; ")}. Never age late-20s characters into their 40s.`
       : "";
 
   const fixNote = options.extraFixInstructionEn
     ? `CRITICAL CORRECTION: ${options.extraFixInstructionEn}`
     : "";
 
-  return `${styleDesc}
+  return `${NO_ON_SCREEN_TEXT_SENTENCE}
+${styleDesc}
 ${refNote}
 Scene: ${options.keyframePromptEn}
 ${fixNote}
-No subtitles, no text overlays, no watermarks.`.trim();
+${NO_ON_SCREEN_TEXT_SENTENCE}`.trim();
 }
 
 export function buildVisionVerifierPrompt(options: {
@@ -305,28 +394,30 @@ export function buildVisionVerifierPrompt(options: {
 Expected characters:
 ${options.characterDescriptions.join("\n")}
 
-Evaluate:
-1. Hair color & hairstyle consistency (e.g., black hair must not drift to blonde/light brown).
-2. Wardrobe & signature accessory consistency.
-3. Dramatic cinematic composition & lighting quality.
+Evaluate this strict 4-point rubric:
+1. Age consistency (CRITICAL): Does each character match their specified age (e.g. a late-20s man or woman must look strictly in their late 20s with youthful skin and features, NOT in their 40s or middle-aged)? If a late-20s character drifted to look like they are in their 40s, score <= 5 and fail immediately.
+2. Hair color & hairstyle consistency (e.g., black hair must not drift to blonde/light brown).
+3. Wardrobe & signature accessory consistency.
+4. Dramatic cinematic composition & lighting quality, with NO burned-in text or subtitles.
 
-Score from 0 to 10 (pass if score >= 7). If score < 7, provide a concise English fix instruction in "fix_instruction_en" to correct the drift on regeneration.
+Score from 0 to 10 (pass if score >= 7). If score < 7, provide a concise English fix instruction in "fix_instruction_en" to correct the age, hair, or wardrobe drift on regeneration.
 Respond ONLY in JSON:
 {
   "score": 9,
   "pass": true,
-  "drift_detail": "머리색·의상·시계 등 캐릭터 시트와 일관성 유지됨 (한국어 1문장 요약)",
+  "drift_detail": "연령대(20대 후반)·머리색·의상·시계 등 캐릭터 시트와 일관성 유지됨 (한국어 1문장 요약)",
   "fix_instruction_en": ""
 }`;
 }
 
 export function buildOmniShotPrompt(options: {
   videoPromptEn: string;
-  speakerRole: string;
+  speakerRoleWithAge: string;
+  characterRefsInFrameWithAge: string[];
   lineKo: string;
   sfxEn: string;
   cameraType: "two_shot_confrontation" | "slapstick_water" | "shock_zoom";
-  durationSec: 4 | 8;
+  durationSec: number;
 }): string {
   let cameraTemplate = "";
   if (options.cameraType === "two_shot_confrontation") {
@@ -337,15 +428,33 @@ export function buildOmniShotPrompt(options: {
       "Dynamic dramatic action beat followed by an immediate crash zoom-in onto the shocked face with water droplets / debris in sharp focus.";
   } else {
     cameraTemplate =
-      "Classic Korean makjang drama triple rapid crash-zoom onto the character's wide-eyed shocked face as a flash of lightning illuminates the room.";
+      "Classic Korean makjang drama rapid crash-zoom onto the character's wide-eyed shocked face as a flash of lightning illuminates the room.";
   }
 
-  return `<FIRST_FRAME> Continuous single shot, no scene cuts, ${options.durationSec} seconds.
+  const usesExplicitShotGrammar = /\bCut to Shot 2\b/i.test(options.videoPromptEn);
+  const cleanedVideoPrompt = usesExplicitShotGrammar
+    ? options.videoPromptEn
+    : options.videoPromptEn
+        .replace(/\b(cut to|cuts to|scene cut|montage|split screen)\b/gi, "smoothly transitions within the same continuous shot to");
+
+  const shotContinuityRule = usesExplicitShotGrammar
+    ? "Follow the specified Shot grammar and end on the final shot."
+    : "Continuous single shot, no scene cuts. End on this shot.";
+
+  const charLockLine =
+    options.characterRefsInFrameWithAge.length > 0
+      ? `Characters in frame (locked age & appearance from image 1): ${options.characterRefsInFrameWithAge.join(", ")}. Preserve their exact age and facial identity from image 1 throughout the entire clip.`
+      : "";
+
+  return `${NO_ON_SCREEN_TEXT_SENTENCE}
+<FIRST_FRAME> ${shotContinuityRule} Duration: ${options.durationSec} seconds.
 Photorealistic Korean prime-time TV drama cinematography, high-contrast lighting.
-Action: ${options.videoPromptEn}
+${charLockLine}
+Action: ${cleanedVideoPrompt} ${shotContinuityRule}
 Camera: ${cameraTemplate}
-Dialogue: ${options.speakerRole} speaks in Korean with intense dramatic emotion and accurate lip-sync: "${options.lineKo}"
-Audio: Realistic foley sound effects only (${options.sfxEn}). Strictly NO background music, NO musical score.`;
+Dialogue: ${options.speakerRoleWithAge} speaks in Korean with intense dramatic emotion and accurate lip-sync: "${options.lineKo}". The line starts within the first second and is fully finished before the clip ends.
+Audio: Realistic foley sound effects only (${options.sfxEn}). Strictly NO background music, NO musical score.
+${NO_ON_SCREEN_TEXT_SENTENCE}`;
 }
 
 export const NARRATOR_VOICE_PROMPT =

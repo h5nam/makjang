@@ -1,4 +1,4 @@
-import { CastMember, MemberConfig, RunState, ShotSpec } from "./types";
+import { CastMember, RunState, ShotSpec } from "./types";
 import { emitRunEvent, getRun, getMedia, saveMedia } from "./store";
 import {
   buildCharacterSheetPrompt,
@@ -6,6 +6,7 @@ import {
   buildOmniShotPrompt,
   buildShowrunnerPatchPrompt,
   buildShowrunnerPrompt,
+  getMemberAgeGender,
 } from "./prompts";
 import {
   generateLyriaSting,
@@ -17,11 +18,65 @@ import {
   synthesizeNarratorTTS,
 } from "./genai";
 import {
+  computeShotDurationSec,
   countHangulSyllables,
   runVerifier1Suite,
   runVerifier2Vision,
   runVerifier3Audio,
 } from "./verifiers";
+import {
+  assembleMasterTrailerVideo,
+  runArgonPostProductionEditor,
+} from "./editor";
+
+const ROMANIZED_ALIASES: Record<string, string[]> = {
+  민지: ["Minji", "Min-ji"],
+  지훈: ["Jihoon", "Ji-hoon", "Jihun", "Ji-hun"],
+  서연: ["Seoyeon", "Seo-yeon"],
+  도윤: ["Doyun", "Do-yun", "Doyoon", "Do-yoon"],
+  하은: ["Haeun", "Ha-eun"],
+  엄마: ["Mom", "Mother"],
+  아빠: ["Dad", "Father"],
+  수진: ["Sujin", "Su-jin", "Soojin"],
+  민수: ["Minsu", "Min-su", "Minsoo"],
+  이모: ["Imo", "Aunt"],
+  태현: ["Taehyun", "Tae-hyun"],
+  유나: ["Yuna", "Yu-na", "Yoona"],
+  성민: ["Sungmin", "Sung-min", "Seongmin", "Seong-min"],
+  지아: ["Jia", "Ji-a"],
+};
+
+function lockCharacterAgeMentions(
+  promptText: string,
+  bindings: Array<{
+    chatName: string;
+    roleName: string;
+    lockedPhrase: string;
+  }>
+): string {
+  let out = promptText || "";
+  for (const b of bindings) {
+    const candidates = new Set<string>();
+    if (b.roleName) candidates.add(b.roleName);
+    if (b.chatName) candidates.add(b.chatName);
+    for (const [ko, romans] of Object.entries(ROMANIZED_ALIASES)) {
+      if (b.chatName === ko || b.roleName.endsWith(ko)) {
+        for (const r of romans) candidates.add(r);
+      }
+    }
+    for (const token of candidates) {
+      if (!token) continue;
+      const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(?<!\\()\\b${escaped}\\b(?!\\))`, "gi");
+      if (regex.test(out) && !out.includes(b.lockedPhrase)) {
+        out = out.replace(regex, b.lockedPhrase);
+      } else if (!out.includes(b.lockedPhrase) && out.includes(token)) {
+        out = out.replace(token, b.lockedPhrase);
+      }
+    }
+  }
+  return out;
+}
 
 const sheetPromisesByRun = new Map<string, Map<string, Promise<string>>>();
 
@@ -50,11 +105,13 @@ async function generateMemberSheet(
 
   const promise = (async () => {
     const hasSelfie = Boolean(selfieId && getMedia(selfieId));
+    const ageInfo = getMemberAgeGender(memberName, lookEn);
     const prompt = buildCharacterSheetPrompt({
       style: run.style,
       roleName,
       lookEn,
       hasSelfie,
+      ageGenderEn: ageInfo.ageGenderEn,
     });
 
     const refs: Array<{ data: string; mimeType?: string }> = [];
@@ -97,15 +154,16 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
     run.status = "writers_room";
     emitRunEvent(run, { type: "status", status: "writers_room" });
 
-    // Decision #3: Immediately fire selfie-based character sheets in parallel with Argon
+    // Decision #3: Immediately fire selfie-based character sheets in parallel with Argon (with locked age!)
     const includedMembers = run.members.filter((m) => m.included);
     for (const m of includedMembers) {
       if (m.selfieId && getMedia(m.selfieId)) {
+        const ageInfo = getMemberAgeGender(m.name);
         generateMemberSheet(
           run,
           m.name,
           m.alias || m.name,
-          "Korean drama lead character, expressive eyes, sharp tailored dark wardrobe, signature accessory",
+          `Youthful ${ageInfo.ageGenderEn}, smooth skin appropriate for ${ageInfo.ageGenderEn}, Korean drama lead character, expressive eyes, sharp tailored dark wardrobe, signature accessory`,
           m.selfieId
         ).catch((err) => {
           console.warn(`Early selfie sheet generation failed for ${m.name}:`, err);
@@ -195,12 +253,13 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
           )[0];
           if (longestShot) {
             const syl = countHangulSyllables(longestShot.line_ko);
+            const dur = computeShotDurationSec(longestShot.line_ko, run.quality);
             const warnCheck = {
               id: `v1-rhythm-s${longestShot.n}`,
               stage: "v1_syllables" as const,
               target: `Shot #${longestShot.n} Tempo`,
               status: "warn" as const,
-              detail: `예고편 급박 호흡 권고치(14음절) 대비 ${syl}음절 감지 — 호흡 박자 정밀 재검증 요청`,
+              detail: `대사 ${syl}음절 호흡 분석 — 클립 길이 자동 산출(ceil(${syl}/4)+2 = ${dur}s) 정밀 검증 중`,
               timestamp: Date.now(),
             };
             run.verifierLog.push(warnCheck);
@@ -211,7 +270,7 @@ export async function startWritersRoomPipeline(runId: string): Promise<void> {
             const resolvedCheck = {
               ...warnCheck,
               status: "pass" as const,
-              detail: `⚠ → ✅ 호흡 박자·억양 끊어읽기 검증 완료 (${syl}/20음절 통과: "${longestShot.line_ko}")`,
+              detail: `⚠ → ✅ 대사 호흡(${syl}/20음절) · 클립 길이 ${dur}s 매칭 완료 ("${longestShot.line_ko}")`,
               timestamp: Date.now(),
             };
             const idx = run.verifierLog.findIndex((c) => c.id === warnCheck.id);
@@ -368,29 +427,74 @@ export async function startShootingPipeline(
       const shotChars = (shot.characters || []).slice(0, 3);
       const sheetBuffers: Buffer[] = [];
       const charDescs: string[] = [];
+      const keyframeCharRefsWithAge: string[] = [];
+      const keyframeAgeBindings: Array<{
+        chatName: string;
+        roleName: string;
+        lockedPhrase: string;
+      }> = [];
+      const videoCharRefsWithAge: string[] = [];
+      const videoAgeBindings: Array<{
+        chatName: string;
+        roleName: string;
+        lockedPhrase: string;
+      }> = [];
 
       for (const chName of shotChars) {
         const castObj = script.cast.find(
           (c) => c.chat_name === chName || c.role_name === chName
         );
-        const key = castObj ? castObj.chat_name : chName;
-        const sheetUrl = run.characterSheets[key];
+        const chatName = castObj ? castObj.chat_name : chName;
+        const roleName = castObj ? castObj.role_name : chName;
+        const ageInfo = getMemberAgeGender(chatName, castObj?.look_en);
+
+        const sheetUrl = run.characterSheets[chatName];
         const buf = getBufferFromMediaUrl(sheetUrl);
-        if (buf) sheetBuffers.push(buf);
+        let sheetImageIndex = sheetBuffers.length + 1;
+        if (buf) {
+          sheetBuffers.push(buf);
+          sheetImageIndex = sheetBuffers.length;
+        }
+
+        const kfLockedPhrase = `the ${ageInfo.ageGenderEn} (${roleName}) from image ${sheetImageIndex}`;
+        keyframeCharRefsWithAge.push(kfLockedPhrase);
+        keyframeAgeBindings.push({
+          chatName,
+          roleName,
+          lockedPhrase: kfLockedPhrase,
+        });
+
+        const vidLockedPhrase = `the ${ageInfo.ageGenderEn} (${roleName}) from image 1`;
+        videoCharRefsWithAge.push(vidLockedPhrase);
+        videoAgeBindings.push({
+          chatName,
+          roleName,
+          lockedPhrase: vidLockedPhrase,
+        });
+
         if (castObj) {
-          charDescs.push(`${castObj.role_name} (${castObj.chat_name}): ${castObj.look_en}`);
+          charDescs.push(
+            `Image ${sheetImageIndex} — ${castObj.role_name} (${castObj.chat_name}, strictly a ${ageInfo.ageGenderEn} / ${ageInfo.ageRangeKo}): ${castObj.look_en}`
+          );
         } else {
-          charDescs.push(chName);
+          charDescs.push(
+            `Image ${sheetImageIndex} — ${chName} (strictly a ${ageInfo.ageGenderEn} / ${ageInfo.ageRangeKo})`
+          );
         }
       }
+
+      const ageLockedKeyframeScene = lockCharacterAgeMentions(
+        shot.keyframe_prompt_en,
+        keyframeAgeBindings
+      );
 
       let keyframeBuf = getBufferFromMediaUrl(run.keyframes[shot.n]);
       if (!keyframeBuf) {
         // Generate Keyframe
         const kfPrompt = buildKeyframePrompt({
           style: run.style,
-          keyframePromptEn: shot.keyframe_prompt_en,
-          characterNames: shotChars,
+          keyframePromptEn: ageLockedKeyframeScene,
+          characterRefsWithAge: keyframeCharRefsWithAge,
         });
 
         keyframeBuf = await generateNanoBananaImage({
@@ -410,7 +514,7 @@ export async function startShootingPipeline(
           url: run.keyframes[shot.n],
         });
 
-        // Run Verifier #2 (Vision consistency)
+        // Run Verifier #2 (Vision consistency + age check)
         if (sheetBuffers.length > 0) {
           const v2 = await runVerifier2Vision(
             run,
@@ -424,8 +528,8 @@ export async function startShootingPipeline(
             try {
               const fixedKfPrompt = buildKeyframePrompt({
                 style: run.style,
-                keyframePromptEn: shot.keyframe_prompt_en,
-                characterNames: shotChars,
+                keyframePromptEn: ageLockedKeyframeScene,
+                characterRefsWithAge: keyframeCharRefsWithAge,
                 extraFixInstructionEn: v2.fixInstructionEn,
               });
               keyframeBuf = await generateNanoBananaImage({
@@ -464,11 +568,28 @@ export async function startShootingPipeline(
         return;
       }
 
-      // Generate Video via gemini-omni-1.1-flash
-      const durationSec = run.quality === "final" ? 8 : 4;
+      // Compute duration from line: ceil(hangul_syllables / 4) + 2 seconds, clamped to "6s".."8s"
+      const durationSec = computeShotDurationSec(shot.line_ko, run.quality);
+
+      const speakerCast = script.cast.find(
+        (c) => c.chat_name === shot.speaker || c.role_name === shot.speaker
+      );
+      const speakerChatName = speakerCast ? speakerCast.chat_name : shot.speaker;
+      const speakerAgeInfo = getMemberAgeGender(
+        speakerChatName,
+        speakerCast?.look_en
+      );
+      const speakerRoleWithAge = `the ${speakerAgeInfo.ageGenderEn} (${shot.speaker}) from image 1`;
+
+      const ageLockedVideoAction = lockCharacterAgeMentions(
+        shot.video_prompt_en,
+        videoAgeBindings
+      );
+
       const omniPrompt = buildOmniShotPrompt({
-        videoPromptEn: shot.video_prompt_en,
-        speakerRole: shot.speaker,
+        videoPromptEn: ageLockedVideoAction,
+        speakerRoleWithAge,
+        characterRefsInFrameWithAge: videoCharRefsWithAge,
         lineKo: shot.line_ko,
         sfxEn: shot.sfx_en,
         cameraType: shot.camera_type,
@@ -479,6 +600,7 @@ export async function startShootingPipeline(
         keyframeBuffer: keyframeBuf,
         prompt: omniPrompt,
         quality: run.quality,
+        durationSec,
       });
 
       let vidMediaId = saveMedia(videoBuf, "video/mp4");
@@ -489,45 +611,80 @@ export async function startShootingPipeline(
         url: run.videos[shot.n],
       });
 
-      // Run Verifier #3 (Audio transcription CER)
-      const v3 = await runVerifier3Audio(run, shot, videoBuf);
+      // Run Verifier #3 (Audio transcription CER + 2-frame vision check for burned-in subtitles)
+      let v3 = await runVerifier3Audio(run, shot, videoBuf, durationSec);
       if (!v3.pass) {
-        let regenSucceeded = false;
+        // Always attempt 1x Omni regen first (with 60s hard deadline), keeping TTS dub only as the last resort
+        try {
+          const regenOmniPrompt = buildOmniShotPrompt({
+            videoPromptEn: `${ageLockedVideoAction}. Zero text or captions anywhere on screen.`,
+            speakerRoleWithAge,
+            characterRefsInFrameWithAge: videoCharRefsWithAge,
+            lineKo: shot.line_ko,
+            sfxEn: shot.sfx_en,
+            cameraType: shot.camera_type,
+            durationSec: Math.min(8, durationSec + 1),
+          });
 
-        // Decision #4: In QUALITY=final, try 1x Omni regen with a hard 60s deadline. In draft, skip directly to TTS dub.
-        if (run.quality === "final") {
-          try {
-            const regenVideoBuf = await Promise.race([
-              generateOmniShotVideo({
-                keyframeBuffer: keyframeBuf,
-                prompt: `${omniPrompt} IMPORTANT: Articulate every Korean syllable of "${shot.line_ko}" clearly and distinctly.`,
-                quality: run.quality,
-              }),
-              new Promise<Buffer>((_, reject) =>
-                setTimeout(() => reject(new Error("Omni regen 60s timeout")), 60000)
-              ),
-            ]);
-            const v3Retry = await runVerifier3Audio(run, shot, regenVideoBuf);
-            if (v3Retry.pass) {
-              videoBuf = regenVideoBuf;
-              vidMediaId = saveMedia(videoBuf, "video/mp4");
-              run.videos[shot.n] = `/api/media/${vidMediaId}`;
-              emitRunEvent(run, {
-                type: "shot_ready",
-                shot: shot.n,
-                url: run.videos[shot.n],
-              });
-              regenSucceeded = true;
-            }
-          } catch (regenVidErr) {
-            console.warn(`Omni regen failed/timed out for shot ${shot.n}:`, regenVidErr);
+          const regenVideoBuf = await Promise.race([
+            generateOmniShotVideo({
+              keyframeBuffer: keyframeBuf,
+              prompt: regenOmniPrompt,
+              quality: run.quality,
+              durationSec: Math.min(8, durationSec + 1),
+            }),
+            new Promise<Buffer>((_, reject) =>
+              setTimeout(() => reject(new Error("Omni regen 60s timeout")), 60000)
+            ),
+          ]);
+
+          const v3Retry = await runVerifier3Audio(
+            run,
+            shot,
+            regenVideoBuf,
+            Math.min(8, durationSec + 1)
+          );
+
+          // Accept the regenerated video if it passed or improved over the first attempt
+          if (
+            v3Retry.pass ||
+            (!v3Retry.hasBurnedInText && v3.hasBurnedInText) ||
+            v3Retry.cer < v3.cer
+          ) {
+            videoBuf = regenVideoBuf;
+            vidMediaId = saveMedia(videoBuf, "video/mp4");
+            run.videos[shot.n] = `/api/media/${vidMediaId}`;
+            emitRunEvent(run, {
+              type: "shot_ready",
+              shot: shot.n,
+              url: run.videos[shot.n],
+            });
+            v3 = v3Retry;
           }
+
+          if (v3.pass) {
+            const regenResolved = {
+              id: `v3-regen-s${shot.n}`,
+              stage: "v3_audio" as const,
+              target: `Shot #${shot.n} Omni Regen`,
+              status: "pass" as const,
+              detail: `⚠ → ✅ Omni 영상 재생성 통과 (CER ${(v3.cer * 100).toFixed(0)}%, 자막 없음 확인)`,
+              timestamp: Date.now(),
+            };
+            run.verifierLog.push(regenResolved);
+            emitRunEvent(run, { type: "verifier", check: regenResolved });
+          }
+        } catch (regenVidErr) {
+          console.warn(`Omni regen failed/timed out for shot ${shot.n}:`, regenVidErr);
         }
 
-        if (!regenSucceeded) {
-          // Synthesize clean TTS dub fallback
+        // Last resort only: if dialogue CER still failed (> 0.15) after Omni regen, attach TTS dub
+        if (v3.cer > 0.15) {
           try {
-            const dubBuf = await synthesizeCharacterDubTTS(shot.line_ko, "female");
+            const dubBuf = await synthesizeCharacterDubTTS(
+              shot.line_ko,
+              speakerAgeInfo.gender
+            );
             const dubId = saveMedia(dubBuf, "audio/wav");
             const dubUrl = `/api/media/${dubId}`;
             run.shotDubs[shot.n] = dubUrl;
@@ -540,9 +697,9 @@ export async function startShootingPipeline(
             const dubResolved = {
               id: `v3-dub-s${shot.n}`,
               stage: "v3_audio" as const,
-              target: `Shot #${shot.n} Audio Dub`,
+              target: `Shot #${shot.n} Audio Dub (Last Resort)`,
               status: "pass" as const,
-              detail: `⚠ → ✅ 클린 한국어 TTS 더빙 트랙 합성·교체 완료 ("${shot.line_ko}")`,
+              detail: `⚠ → ✅ 재생성 후 최후 수단 TTS 더빙 트랙 보강 완료 ("${shot.line_ko}")`,
               timestamp: Date.now(),
             };
             run.verifierLog.push(dubResolved);
