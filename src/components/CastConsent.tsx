@@ -19,6 +19,7 @@ import {
 
 interface CastConsentProps {
   session: ParsedSessionData;
+  uiLang?: "ko" | "en";
   onBack: () => void;
   onStarted: (config: {
     members: MemberConfig[];
@@ -29,19 +30,21 @@ interface CastConsentProps {
   }) => void;
 }
 
-const TOPIC_OPTIONS = [
-  "정치/이념",
-  "종교",
-  "건강/병원",
-  "실제 채무/계좌",
-  "가족 실명 언급",
+const TOPIC_OPTIONS: Array<{ ko: string; en: string }> = [
+  { ko: "정치/이념", en: "Politics" },
+  { ko: "종교", en: "Religion" },
+  { ko: "건강/병원", en: "Medical/Health" },
+  { ko: "실제 채무/계좌", en: "Real Debt/Bank" },
+  { ko: "가족 실명 언급", en: "Family Real Names" },
 ];
 
 export function CastConsent({
   session,
+  uiLang = "ko",
   onBack,
   onStarted,
 }: CastConsentProps) {
+  const isEn = uiLang === "en";
   const [members, setMembers] = useState<MemberConfig[]>(session.members);
   const [genre, setGenre] = useState<"modern" | "rofan">(
     session.genre || "modern"
@@ -121,7 +124,11 @@ export function CastConsent({
     setError(null);
     const activeCount = members.filter((m) => m.included).length;
     if (activeCount < 2) {
-      setError("최소 2명 이상의 출연자가 동의해야 드라마가 성립합니다.");
+      setError(
+        isEn
+          ? "At least 2 cast members must opt in to start production."
+          : "최소 2명 이상의 출연자가 동의해야 드라마가 성립합니다."
+      );
       return;
     }
 
@@ -141,11 +148,16 @@ export function CastConsent({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "제작 시작 실패");
+      if (!res.ok)
+        throw new Error(
+          data.error || (isEn ? "Failed to start production" : "제작 시작 실패")
+        );
       session.genre = genre;
       onStarted({ members, style, genre, excludedTopics, autoApprove });
     } catch (err: any) {
-      setError(err?.message || "오류가 발생했습니다.");
+      setError(
+        err?.message || (isEn ? "An error occurred." : "오류가 발생했습니다.")
+      );
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +179,7 @@ export function CastConsent({
               className="inline-flex items-center gap-1.5 text-xs font-mono-code text-[#9A968E] hover:text-[#F5F2EB] cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>다른 단톡방 선택</span>
+              <span>{isEn ? "Back to Lineup" : "다른 단톡방 선택"}</span>
             </button>
             <span className="text-white/20">|</span>
             <span className="text-xs font-mono-code text-[#D4B26A]">
@@ -175,11 +187,13 @@ export function CastConsent({
             </span>
           </div>
           <h1 className="font-drama-serif text-2xl sm:text-3xl font-bold text-[#F5F2EB]">
-            출연 동의 및 캐스팅 보드 —{" "}
+            {isEn ? "Cast & Consent Board — " : "출연 동의 및 캐스팅 보드 — "}
             <span className="text-[#FEE500]">{session.roomTitle}</span>
           </h1>
           <p className="text-xs font-mono-code text-[#9A968E]">
-            총 {session.lineCount}줄 파싱 완료 · 출연 제외된 멤버의 대사는 AI 작가에게 전달되지 않습니다.
+            {isEn
+              ? `${session.lineCount} messages parsed · Messages from opted-out members are stripped before any AI prompt.`
+              : `총 ${session.lineCount}줄 파싱 완료 · 출연 제외된 멤버의 대사는 AI 작가에게 전달되지 않습니다.`}
           </p>
         </div>
 
@@ -194,10 +208,14 @@ export function CastConsent({
         <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-drama-serif text-lg font-bold text-[#F5F2EB]">
-              단톡방 멤버 ({members.filter((m) => m.included).length}/{members.length}명 출연)
+              {isEn
+                ? `Chat Members (${members.filter((m) => m.included).length}/${members.length} Cast)`
+                : `단톡방 멤버 (${members.filter((m) => m.included).length}/${members.length}명 출연)`}
             </h2>
             <span className="text-xs font-mono-code text-[#9A968E]">
-              QR 오디션으로 본인 셀카 업로드 가능
+              {isEn
+                ? "Scan QR to upload your own selfie"
+                : "QR 오디션으로 본인 셀카 업로드 가능"}
             </span>
           </div>
 
@@ -227,7 +245,7 @@ export function CastConsent({
                         <div className="text-center p-1">
                           <Camera className="w-4 h-4 text-[#9A968E] mx-auto mb-1" />
                           <span className="text-[10px] font-mono-code text-[#9A968E] block leading-tight">
-                            가상 배우
+                            {isEn ? "AI Actor" : "가상 배우"}
                           </span>
                         </div>
                       )}
@@ -240,7 +258,7 @@ export function CastConsent({
                             {m.name}
                           </span>
                           <span className="ml-2 text-[11px] font-mono-code text-[#9A968E]">
-                            {m.lineCount}줄
+                            {isEn ? `${m.lineCount} lines` : `${m.lineCount}줄`}
                           </span>
                         </div>
 
@@ -256,12 +274,12 @@ export function CastConsent({
                           {m.included ? (
                             <>
                               <UserCheck className="w-3 h-3" />
-                              <span>출연 ON</span>
+                              <span>{isEn ? "CAST ON" : "출연 ON"}</span>
                             </>
                           ) : (
                             <>
                               <UserX className="w-3 h-3" />
-                              <span>제외 OFF</span>
+                              <span>{isEn ? "OPT OUT" : "제외 OFF"}</span>
                             </>
                           )}
                         </button>
@@ -270,7 +288,7 @@ export function CastConsent({
                       {/* Alias Input */}
                       <div>
                         <label className="block text-[10px] font-mono-code text-[#9A968E] mb-0.5">
-                          극중 배역 가명 (Role Alias)
+                          {isEn ? "Role Alias" : "극중 배역 가명 (Role Alias)"}
                         </label>
                         <input
                           type="text"
@@ -278,7 +296,7 @@ export function CastConsent({
                           disabled={!m.included}
                           onChange={(e) => updateAlias(idx, e.target.value)}
                           className="w-full px-2.5 py-1 rounded-xs bg-[#0B0B0C] border border-white/10 text-xs text-[#F5F2EB] focus:outline-none focus:border-[#D4B26A]"
-                          placeholder="극중 이름 입력"
+                          placeholder={isEn ? "Enter character alias" : "극중 이름 입력"}
                         />
                       </div>
 
@@ -292,7 +310,11 @@ export function CastConsent({
                               className="text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-[#D4B26A]/30 text-[#D4B26A] hover:bg-[#D4B26A]/10 cursor-pointer"
                             >
                               {m.selfieId
-                                ? "셀카 해제 (가상배우)"
+                                ? isEn
+                                  ? "Detach Selfie (Use AI Actor)"
+                                  : "셀카 해제 (가상배우)"
+                                : isEn
+                                ? "Re-attach Sample Selfie"
                                 : "샘플 셀카 다시 연결"}
                             </button>
                           )}
@@ -302,7 +324,9 @@ export function CastConsent({
                             className="inline-flex items-center gap-1 text-[11px] font-mono-code px-2 py-0.5 rounded-xs border border-white/15 text-[#F5F2EB]/80 hover:border-[#D4B26A] hover:text-[#D4B26A] cursor-pointer"
                           >
                             <QrCode className="w-3 h-3" />
-                            <span>QR 셀카 오디션</span>
+                            <span>
+                              {isEn ? "QR Selfie Audition" : "QR 셀카 오디션"}
+                            </span>
                           </button>
                         </div>
                       )}
@@ -320,7 +344,7 @@ export function CastConsent({
             {/* Genre Toggle: 현대 막장 | 로판 막장 */}
             <div className="space-y-2">
               <label className="block text-xs font-mono-code uppercase tracking-wider text-[#D4B26A]">
-                장르 선택 (Genre Mode)
+                {isEn ? "Genre Mode" : "장르 선택 (Genre Mode)"}
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
@@ -332,9 +356,13 @@ export function CastConsent({
                       : "bg-[#0B0B0C] border-white/10 text-[#9A968E]"
                   }`}
                 >
-                  <div className="text-xs font-bold">현대 막장</div>
+                  <div className="text-xs font-bold">
+                    {isEn ? "Modern Makjang" : "현대 막장"}
+                  </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
-                    펜트하우스 · 부부의 세계 톤
+                    {isEn
+                      ? "Penthouse · World of the Married"
+                      : "펜트하우스 · 부부의 세계 톤"}
                   </div>
                 </button>
 
@@ -348,19 +376,23 @@ export function CastConsent({
                   }`}
                 >
                   <div className="text-xs font-bold flex items-center gap-1">
-                    <span>로판 막장</span>
+                    <span>{isEn ? "Rofan Makjang" : "로판 막장"}</span>
                     <span className="text-[9px] px-1 py-0.2 rounded-xs bg-[#D4B26A] text-[#0B0B0C] font-mono-code font-extrabold">
-                      황실
+                      {isEn ? "ROYAL" : "황실"}
                     </span>
                   </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
-                    칼레도르 제국 · 북부 대공 · 파혼
+                    {isEn
+                      ? "Kaledor Empire · Grand Duke"
+                      : "칼레도르 제국 · 북부 대공 · 파혼"}
                   </div>
                 </button>
               </div>
               {genre === "rofan" && (
                 <p className="text-[11px] text-[#D4B26A]/90 leading-snug pt-0.5">
-                  단톡방 영수증은 그대로 인용하고, 인물·배경·대사만 황실 로맨스 판타지 세계관으로 번안합니다.
+                  {isEn
+                    ? "Real chat receipts are still cited verbatim while characters, costumes, and dialogue are adapted into an imperial Romance-Fantasy court drama."
+                    : "단톡방 영수증은 그대로 인용하고, 인물·배경·대사만 황실 로맨스 판타지 세계관으로 번안합니다."}
                 </p>
               )}
             </div>
@@ -368,7 +400,7 @@ export function CastConsent({
             {/* Visual Style */}
             <div className="space-y-2">
               <label className="block text-xs font-mono-code uppercase tracking-wider text-[#D4B26A]">
-                연출 화풍 선택 (Visual Style)
+                {isEn ? "Visual Style" : "연출 화풍 선택 (Visual Style)"}
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
@@ -381,11 +413,21 @@ export function CastConsent({
                   }`}
                 >
                   <div className="text-xs font-bold">
-                    {genre === "rofan" ? "황실 실사 시대극" : "실사 K-드라마"}
+                    {genre === "rofan"
+                      ? isEn
+                        ? "Live-Action Royal Court"
+                        : "황실 실사 시대극"
+                      : isEn
+                      ? "Live-Action K-Drama"
+                      : "실사 K-드라마"}
                   </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
                     {genre === "rofan"
-                      ? "브리저튼 · 재혼황후 실사 톤"
+                      ? isEn
+                        ? "Bridgerton · Remarried Empress"
+                        : "브리저튼 · 재혼황후 실사 톤"
+                      : isEn
+                      ? "35mm Anamorphic · Penthouse"
                       : "35mm 아나모픽 · 펜트하우스 톤"}
                   </div>
                 </button>
@@ -400,11 +442,21 @@ export function CastConsent({
                   }`}
                 >
                   <div className="text-xs font-bold">
-                    {genre === "rofan" ? "로판 웹소설 표지풍" : "웹툰 무빙툰"}
+                    {genre === "rofan"
+                      ? isEn
+                        ? "Rofan Novel Cover Art"
+                        : "로판 웹소설 표지풍"
+                      : isEn
+                      ? "Moving Webtoon"
+                      : "웹툰 무빙툰"}
                   </div>
                   <div className="text-[10px] font-mono-code opacity-80 mt-0.5">
                     {genre === "rofan"
-                      ? "어느 날 공주가 되어버렸다 작화"
+                      ? isEn
+                        ? "Ornate Manhwa Illustration"
+                        : "어느 날 공주가 되어버렸다 작화"
+                      : isEn
+                      ? "Naver Romance-Thriller Style"
                       : "네이버 로맨스릴러 작화"}
                   </div>
                 </button>
@@ -414,23 +466,24 @@ export function CastConsent({
             {/* Excluded Topics */}
             <div className="space-y-2">
               <label className="block text-xs font-mono-code uppercase tracking-wider text-[#D4B26A]">
-                금기 소재 필터 (Excluded Topics)
+                {isEn ? "Excluded Topics" : "금기 소재 필터 (Excluded Topics)"}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {TOPIC_OPTIONS.map((topic) => {
-                  const active = excludedTopics.includes(topic);
+                  const active = excludedTopics.includes(topic.ko);
+                  const label = isEn ? topic.en : topic.ko;
                   return (
                     <button
-                      key={topic}
+                      key={topic.ko}
                       type="button"
-                      onClick={() => toggleTopic(topic)}
+                      onClick={() => toggleTopic(topic.ko)}
                       className={`px-2.5 py-1 rounded-xs text-xs font-mono-code border transition-colors cursor-pointer ${
                         active
                           ? "bg-[#C8102E]/20 border-[#C8102E] text-[#F5F2EB]"
                           : "bg-[#0B0B0C] border-white/10 text-[#9A968E] hover:border-white/25"
                       }`}
                     >
-                      {active ? `✕ ${topic}` : topic}
+                      {active ? `✕ ${label}` : label}
                     </button>
                   );
                 })}
@@ -441,7 +494,9 @@ export function CastConsent({
             <div className="pt-1 border-t border-white/10">
               <label className="flex items-center justify-between cursor-pointer text-xs">
                 <span className="text-[#F5F2EB]/90">
-                  대본 검수 후 자동으로 영상 촬영 진행
+                  {isEn
+                    ? "Auto-shoot video after script verification"
+                    : "대본 검수 후 자동으로 영상 촬영 진행"}
                 </span>
                 <input
                   type="checkbox"
@@ -451,7 +506,9 @@ export function CastConsent({
                 />
               </label>
               <p className="text-[11px] text-[#9A968E] mt-1">
-                체크 해제 시 작가실 대본 완성 후 대사/클리셰를 직접 수정하고 촬영을 승인(HITL #2)할 수 있습니다.
+                {isEn
+                  ? "Uncheck to review and edit lines/tropes in HITL #2 before shooting."
+                  : "체크 해제 시 작가실 대본 완성 후 대사/클리셰를 직접 수정하고 촬영을 승인(HITL #2)할 수 있습니다."}
               </p>
             </div>
 
@@ -465,7 +522,9 @@ export function CastConsent({
                 type="password"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="데모 패스코드 입력 (makjang)"
+                placeholder={
+                  isEn ? "Enter demo passcode (makjang)" : "데모 패스코드 입력 (makjang)"
+                }
                 className="w-full px-3 py-2 rounded-xs bg-[#0B0B0C] border border-white/15 text-xs font-mono-code text-[#F5F2EB] focus:outline-none focus:border-[#D4B26A]"
               />
             </div>
@@ -485,14 +544,22 @@ export function CastConsent({
               <Clapperboard className="w-4 h-4" />
               <span>
                 {submitting
-                  ? "작가실 오픈 중..."
+                  ? isEn
+                    ? "Opening Writers' Room..."
+                    : "작가실 오픈 중..."
+                  : isEn
+                  ? "Open Writers' Room · Start Script →"
                   : "작가실 오픈 · 대본 집필 시작 →"}
               </span>
             </button>
 
             <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono-code text-[#9A968E]">
               <Sparkles className="w-3.5 h-3.5 text-[#D4B26A]" />
-              <span>Gemini 4 Argon + Nano Banana 2.1 병렬 가동</span>
+              <span>
+                {isEn
+                  ? "Gemini 4 Argon + Nano Banana 2.1 in parallel"
+                  : "Gemini 4 Argon + Nano Banana 2.1 병렬 가동"}
+              </span>
             </div>
           </div>
         </div>
@@ -515,10 +582,14 @@ export function CastConsent({
                 MOBILE SELFIE AUDITION
               </span>
               <h3 className="font-drama-serif text-xl font-bold text-[#F5F2EB]">
-                {qrMember} 님의 모바일 셀카 오디션
+                {isEn
+                  ? `${qrMember}'s Mobile Selfie Audition`
+                  : `${qrMember} 님의 모바일 셀카 오디션`}
               </h3>
               <p className="text-xs text-[#9A968E]">
-                스마트폰 카메라로 아래 QR을 스캔해 셀카를 올리면 즉시 캐릭터 시트에 반영됩니다.
+                {isEn
+                  ? "Scan this QR code with a smartphone camera to upload a selfie directly into the character sheet."
+                  : "스마트폰 카메라로 아래 QR을 스캔해 셀카를 올리면 즉시 캐릭터 시트에 반영됩니다."}
               </p>
             </div>
 
@@ -533,7 +604,9 @@ export function CastConsent({
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-mono-code text-[#D4B26A] hover:underline"
               >
-                <span>새 탭에서 오디션 페이지 열기</span>
+                <span>
+                  {isEn ? "Open Audition Page in New Tab" : "새 탭에서 오디션 페이지 열기"}
+                </span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>

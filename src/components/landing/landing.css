@@ -32,17 +32,22 @@
 }
 
 /* ---------- header ---------- */
-.mk-header { position: fixed; inset: 0 0 auto 0; z-index: 40; height: 68px; display: flex; align-items: center; transition: background 320ms var(--ease), border-color 320ms var(--ease); border-bottom: 1px solid transparent; }
-.mk-header.solid { background: rgba(11, 11, 12, 0.86); backdrop-filter: blur(14px); border-bottom-color: var(--line); }
-.mk-header .wrap { display: flex; align-items: center; justify-content: space-between; }
-.mk-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); }
-.mk-brand img { width: 30px; height: 30px; }
-.mk-brand span { font-size: 19px; color: var(--gold-2); }
-.mk-nav { display: flex; gap: 28px; align-items: center; }
-.mk-nav a { color: var(--fg-2); text-decoration: none; font-size: 14px; transition: color 200ms; }
+.mk-header { position: fixed; inset: 0 0 auto 0; z-index: 50; height: 68px; display: flex; align-items: center; transition: background 320ms var(--ease), border-color 320ms var(--ease); border-bottom: 1px solid transparent; background: linear-gradient(180deg, rgba(11, 11, 12, 0.78) 0%, rgba(11, 11, 12, 0) 100%); }
+.mk-header.solid { background: rgba(11, 11, 12, 0.92); backdrop-filter: blur(14px); border-bottom-color: var(--line); }
+.mk-header .wrap { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: none; padding: 0 clamp(18px, 2.8vw, 36px); }
+.mk-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); flex-shrink: 0; }
+.mk-brand img.mk-brand-icon { width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 6px; object-fit: contain; display: block; flex-shrink: 0; box-shadow: 0 4px 14px rgba(200, 16, 46, 0.38); }
+.mk-brand span.mk-brand-title { font-size: 20px; color: var(--gold-2); line-height: 1; white-space: nowrap; }
+.mk-brand span.mk-brand-sub { font-size: 11px; color: var(--gold); letter-spacing: 0.14em; opacity: 0.88; border-left: 1px solid rgba(212, 178, 106, 0.32); padding-left: 10px; line-height: 1; white-space: nowrap; }
+.mk-nav { display: flex; gap: 24px; align-items: center; }
+.mk-nav a { color: var(--fg-2); text-decoration: none; font-size: 14px; transition: color 200ms; white-space: nowrap; }
 .mk-nav a:hover { color: var(--fg); }
 .mk-nav .pill { padding: 9px 16px; border-radius: 999px; background: var(--kakao); color: #191919; font-weight: 700; }
 .mk-nav .pill:hover { color: #191919; filter: brightness(1.05); }
+.mk-lang { display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(212, 178, 106, 0.38); border-radius: 999px; padding: 2px; gap: 2px; flex-shrink: 0; }
+.mk-lang button { border: 0; background: transparent; color: var(--fg-2); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 5px 10px; border-radius: 999px; cursor: pointer; transition: all 180ms var(--ease); line-height: 1; }
+.mk-lang button:hover { color: var(--fg); }
+.mk-lang button.on { background: var(--gold); color: #0b0b0c; }
 
 /* ---------- hero ---------- */
 .mk-hero { position: relative; height: 100svh; min-height: 680px; overflow: hidden; display: flex; align-items: center; isolation: isolate; padding-top: 56px; }
@@ -234,7 +239,16 @@
 }
 @media (max-width: 720px) {
   .mk .wrap { width: calc(100% - 32px); }
+  .mk-header .wrap { width: 100%; padding: 0 12px; height: 58px; }
+  .mk-brand { gap: 7px; }
+  .mk-brand img.mk-brand-icon { width: 26px; height: 26px; border-radius: 7px; }
+  .mk-brand span.mk-brand-title { font-size: 16px; letter-spacing: -0.02em; }
+  .mk-brand span.mk-brand-sub { display: none; }
+  .mk-nav { gap: 6px; }
   .mk-nav a:not(.pill) { display: none; }
+  .mk-lang { padding: 2px; }
+  .mk-lang button { padding: 4px 7px; font-size: 10px; }
+  .mk-nav .pill { padding: 7px 11px; font-size: 12px; }
   .mk-hero { min-height: 640px; align-items: flex-end; padding-bottom: calc(5.5vh + 56px); }
   .mk-hero-wall { grid-template-columns: repeat(2, 1fr); transform: rotate(-4deg) scale(1.2); }
   .mk-hero-col:nth-child(n+3) { display: none; }
